@@ -58,3 +58,4 @@ where `_your_choice` can be `ansi` for generic 104-key ANSI keyboard and `tartar
 
 * Add back support for the KA500 and pokr
 * Is LED light control possible?
+* Thie currently depends on an older fork of [Hathach's TinyUSB](https://github.com/hathach/tinyusb) prior to 2/23/24 commits. The older distribution is included here. Need to update to using current TinyHub commits.
