@@ -46,7 +46,6 @@ After [setup your qmk envorinment](https://github.com/qmk/qmk_firmware/blob/mast
 ```
 git clone https://github.com/whyaaronbailey/adafruitrp2040_usbh.git _your_qmk_repo/keyboards/converter/adafruit_rp2040_usbh
 cd _your_qmk_repo/keyboards/converter/adafruit_rp2040_usbh
-git submodule update --init --recursive
 cd ../../..
 make converter/adafruit_rp2040_usbh:_your_choice:uf2 
 ```
@@ -55,7 +54,6 @@ where `_your_choice` can be `ansi` for generic 104-key ANSI keyboard and `tartar
 
 
 ## TODO:
-
+* I removed the line "git submodule update --init --recursive" from instructions above because this currently depends on an older fork of [Hathach's TinyUSB](https://github.com/hathach/tinyusb) prior to 2/23/24 commits. The older distribution is included here. Need to update to using current TinyHub commits.
 * Add back support for the KA500 and pokr
 * Is LED light control possible?
-* Thie currently depends on an older fork of [Hathach's TinyUSB](https://github.com/hathach/tinyusb) prior to 2/23/24 commits. The older distribution is included here. Need to update to using current TinyHub commits.
