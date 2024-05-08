@@ -28,7 +28,57 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LSFT,          KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT,             KC_UP,               KC_P1,   KC_P2,   KC_P3,   KC_PENT,
         KC_LCTL, KC_LGUI, KC_LALT,                            KC_SPC,                             KC_RALT, KC_RGUI, KC_APP,  KC_RCTL,    KC_LEFT, KC_DOWN, KC_RGHT,    KC_P0,            KC_PDOT
     )
-     */
+
+
+     * TARATARUS REPRESENTATION ON ANSI.
+     * Numbers represent key labels on the Tartarus
+     * Arrow keys correspond to direction pad
+     * THMB is the thumb button
+     *
+     * ┌───┐   ┌───┬───┬───┬───┐ ┌───┬───┬───┬───┐ ┌───┬───┬───┬───┐ ┌───┬───┬───┐
+     * │   │   │   │   │   │   │ │   │   │   │   │ │   │   │   │   │ │   │   │   │
+     * └───┘   └───┴───┴───┴───┘ └───┴───┴───┴───┘ └───┴───┴───┴───┘ └───┴───┴───┘
+     * ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───────┐ ┌───┬───┬───┐ ┌───┬───┬───┬───┐
+     * │   │ 01│ 02│ 03│ 04│ 05│   │   │   │   │   │   │   │       │ │   │   │   │ │   │   │   │   │
+     * ├───┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─────┤ ├───┼───┼───┤ ├───┼───┼───┼───┤
+     * │  06 │07 │08 │09 │10 │   │   │   │   │   │   │   │   │     │ │   │   │   │ │   │   │   │   │
+     * ├─────┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴─────┤ └───┴───┴───┘ ├───┼───┼───┤   │
+     * │  11  │12 │13 │14 │15 │   │   │   │   │   │   │   │        │  DIRECTIONPAD │   │   │   │   │
+     * ├──────┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴────────┤     ┌───┐     ├───┼───┼───┼───┤
+     * │  16    │17 │18 │19 │   │   │   │   │   │   │   │          │     │ ↑ │     │   │   │   │   │
+     * ├────┬───┴┬──┴─┬─┴───┴───┴───┴───┴───┴──┬┴───┼───┴┬────┬────┤ ┌───┼───┼───┐ ├───┴───┼───┤   │
+     * │    │    │THMB│          20            │THMB│    │    │    │ │ ← │ ↓ │ → │ │       │   │   │
+     * └────┴────┴────┴────────────────────────┴────┴────┴────┴────┘ └───┴───┴───┘ └───────┴───┴───┘
+    * In the example layout below, I've assigned the keys as follows. Hopefully this will be uncessary once I'm able to correctly define the tartarus in the info.json file.
+    *
+    * TARTARUS KEY LABEL            ASSIGNMENT
+    *        01                         1
+    *        02                         2
+    *        03                         3
+    *        04                         4
+    *        05                         5
+    *        06                         6
+    *        07                         7
+    *        08                         8
+    *        09                         9
+    *        10                         0
+    *        11                         A
+    *        12                         B
+    *        13                         C
+    *        14                         D
+    *        15                         E
+    *        16                         F
+    *        17                         G
+    *        18                         H
+    *        19                         I
+    *        20                         spacebar
+    *        THUMB BUTTON               Z
+    *        DIRECTION PAD              UP, LEFT, DOWN, RIGHT
+    *           UP                      KC_UP
+    *           LEFT                    KC_LEFT
+    *           DOWN                    KC_DOWN
+    *           RIGHT                   KC_RIGHT
+*/
 
 [0] = LAYOUT(
 
@@ -41,5 +91,3 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_NO,   KC_NO,   KC_Z,                            KC_SPC,                                KC_NO,   KC_NO,   KC_NO,   KC_NO,    KC_LEFT, KC_DOWN, KC_RGHT,      KC_NO,            KC_NO
     )
 };
-
-
