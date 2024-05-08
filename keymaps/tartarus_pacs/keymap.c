@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include QMK_KEYBOARD_H
-#include "raw_hid.h"
-#include "print.h"
 
 enum custom_keycodes {
 	COPYACC = SAFE_RANGE,
 	OPENGE,
 	OPENEPIC,
+    OPENMCKESSON,
 	PASTE,
 	DICTATE,
 	WL_SOFT,
@@ -15,9 +14,10 @@ enum custom_keycodes {
 	WL_STROKE,
 	WL_LUNG,
 	WL_VASCULAR,
+    WL_SUBDURAL,
 	WL_HARDWARE,
 	ARROW,
-	ZOOM_CINE,
+	ZOOM,
 	MEASURE,
 	SCROLLUP,
 	SCROLLDOWN,
@@ -32,7 +32,11 @@ enum custom_keycodes {
 	PREVFIELD,
 	FAST_UP,
 	FAST_DOWN,
-	SIGNREPORT
+	SIGNREPORT,
+    ELLIPSE,
+    ROI,
+    INTERZOOM,
+    HANG
 };
 
 enum {
@@ -65,17 +69,80 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LSFT,          KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT,             KC_UP,               KC_P1,   KC_P2,   KC_P3,   KC_PENT,
         KC_LCTL, KC_LGUI, KC_LALT,                            KC_SPC,                             KC_RALT, KC_RGUI, KC_APP,  KC_RCTL,    KC_LEFT, KC_DOWN, KC_RGHT,    KC_P0,            KC_PDOT
     )
-     */
+
+
+     * TARATARUS REPRESENTATION ON ANSI.
+     * Numbers represent key labels on the Tartarus
+     * Arrow keys correspond to direction pad
+     * THMB is the thumb button
+     *
+     * ┌───┐   ┌───┬───┬───┬───┐ ┌───┬───┬───┬───┐ ┌───┬───┬───┬───┐ ┌───┬───┬───┐
+     * │   │   │   │   │   │   │ │   │   │   │   │ │   │   │   │   │ │   │   │   │
+     * └───┘   └───┴───┴───┴───┘ └───┴───┴───┴───┘ └───┴───┴───┴───┘ └───┴───┴───┘
+     * ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───────┐ ┌───┬───┬───┐ ┌───┬───┬───┬───┐
+     * │   │ 01│ 02│ 03│ 04│ 05│   │   │   │   │   │   │   │       │ │   │   │   │ │   │   │   │   │
+     * ├───┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─────┤ ├───┼───┼───┤ ├───┼───┼───┼───┤
+     * │  06 │07 │08 │09 │10 │   │   │   │   │   │   │   │   │     │ │   │   │   │ │   │   │   │   │
+     * ├─────┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴─────┤ └───┴───┴───┘ ├───┼───┼───┤   │
+     * │  11  │12 │13 │14 │15 │   │   │   │   │   │   │   │        │  DIRECTIONPAD │   │   │   │   │
+     * ├──────┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴────────┤     ┌───┐     ├───┼───┼───┼───┤
+     * │  16    │17 │18 │19 │   │   │   │   │   │   │   │          │     │ ↑ │     │   │   │   │   │
+     * ├────┬───┴┬──┴─┬─┴───┴───┴───┴───┴───┴──┬┴───┼───┴┬────┬────┤ ┌───┼───┼───┐ ├───┴───┼───┤   │
+     * │    │    │THMB│          20            │THMB│    │    │    │ │ ← │ ↓ │ → │ │       │   │   │
+     * └────┴────┴────┴────────────────────────┴────┴────┴────┴────┘ └───┴───┴───┘ └───────┴───┴───┘
+    * In the example layout below, I've assigned the keys as follows. Hopefully this will be uncessary once I'm able to correctly define the tartarus in the info.json file.
+    *
+    * TARTARUS KEY LABEL            LAYOUT 0                    LAYOUT 1
+    *        01                     ANNOTATION (Y)              HANG (H)
+    *        02                     WL_SOFT (1)
+    *        03                     WL_LUNG (5)
+    *        04                     WL_SUBDURAL (8) (275 90)    WL_VASCULAR (7) 684 45)
+    *        05                     ZOOM (Z)                    INTERZOOM (+Z)
+    *        06                     OPENEPIC
+    *        07                     WL_BONE (2)                 WL_HARDWARE (6)
+    *        08                     SCROLL_UP
+    *        09                     WL_BRAIN (3)                WL_STROKE (4)
+    *        10                     ARROW (A)                   ELLIPSE (E)
+    *        11                     COPYACC
+    *        12                     FAST_UP
+    *        13                     SCROLLDOWN
+    *        14                     FAST_DOWN
+    *        15                     MEASURE (M)                 ROI (+E)
+    *        16                     OPENGE                      OPENMCKESSON
+    *        17                     SPINE LABEL (C)
+    *        18                     SPINE LABEL (T)
+    *        19                     SPINE LABEL (L)/NAVIGATOR
+    *        20                     DICTATE
+    *        THUMB BUTTON           MO(1) / LAYER SWITCH
+    *        DIRECTION PAD
+    *           UP                  FAST_UP
+    *           DOWN                FAST_DOWN
+    *           LEFT                KC_MS_WH_UP
+    *           RIGHT               KC_MS_WH_DOWN
+    */
+
+
 
 [0] = LAYOUT(
 
-        KC_NO,                      KC_NO,      KC_NO,     KC_NO,     KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,
+        KC_NO,                        KC_NO,      KC_NO,     KC_NO,       KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,
 
-        KC_NO,      ANNOTATION,     WL_SOFT,    WL_LUNG,   WL_STROKE, ZOOM_CINE, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,   KC_NO,
-        OPENEPIC,   WL_BONE,        SCROLLUP,   WL_BRAIN,  ARROW,     KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,   KC_NO,
-        COPYACC,    FAST_UP,        SCROLLDOWN, FAST_DOWN, MEASURE,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,                                    KC_NO,   KC_NO,   KC_NO,
-        OPENGE,                     SPINE_C,    SPINE_T,   SPINE_L,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,               PREVFIELD,           KC_NO,   KC_NO,   KC_NO,   KC_NO,
-        KC_NO,      KC_NO,          SIGNREPORT,                             DICTATE,                                KC_NO,   KC_NO,   KC_NO,   KC_NO,    DELETE, NEXTFIELD, NEXTFIELD,    KC_NO,            KC_NO
+        KC_NO,        ANNOTATION,     WL_SOFT,    WL_LUNG,   WL_VASCULAR, ZOOM,    KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        OPENEPIC,     WL_BONE,        SCROLLUP,   WL_BRAIN,  ARROW,       KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        COPYACC,      FAST_UP,        SCROLLDOWN, FAST_DOWN, MEASURE,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,                                            KC_NO,   KC_NO,   KC_NO,
+        OPENGE,                       SPINE_C,    SPINE_T,   SPINE_L,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,               FAST_UP,                     KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        KC_NO,        KC_NO,          MO(1),                             DICTATE,                                       KC_NO,   KC_NO,   KC_NO,   KC_NO,  KC_MS_WH_UP, FAST_DOWN, KC_MS_WH_DOWN,   KC_NO,            KC_NO
+    ),
+
+[1] = LAYOUT(
+
+        KC_NO,                        KC_NO,      KC_NO,     KC_NO,     KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,     KC_NO,   KC_NO,   KC_NO,
+
+        KC_NO,        HANG,           KC_TRNS,    WL_LUNG,   KC_TRNS,   INTERZOOM, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        KC_TRNS,      WL_HARDWARE,    SCROLLUP,   WL_STROKE, ELLIPSE,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        KC_TRNS,      KC_TRNS,        SCROLLDOWN, FAST_DOWN, ROI,       KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,                                            KC_NO,   KC_NO,   KC_NO,
+        OPENMCKESSON,                 KC_TRNS,    KC_TRNS,   KC_TRNS,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,               KC_TRNS,                     KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        KC_NO,        KC_NO,          KC_TRNS,                           KC_TRNS,                                       KC_NO,   KC_NO,   KC_NO,   KC_NO,    KC_TRNS, KC_TRNS, KC_TRNS,             KC_NO,            KC_NO
     )
 };
 
@@ -96,7 +163,7 @@ uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
         tap_code(KC_MS_WH_DOWN);
     }
     return REP_DELAY;
-}
+};
 
 uint32_t wh_callback_fast(uint32_t trigger_time, void* cb_arg) {
     bool is_up = (bool)cb_arg;
@@ -106,7 +173,7 @@ uint32_t wh_callback_fast(uint32_t trigger_time, void* cb_arg) {
         tap_code(KC_MS_WH_DOWN);
     }
     return REP_DELAY_FAST;
-}
+};
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
@@ -195,11 +262,26 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LCTL("2")
-                    SS_DELAY(1500)
+                    SS_DELAY(2000)
+                    SS_LCTL("v")
+                    SS_DELAY(250)
+                    SS_TAP(X_ENTER)
+                    SS_DELAY(2000)
+                    SS_LALT(SS_LSFT("a"))
+                );
+            }
+            return false;
+
+        case OPENMCKESSON: // Pastes the accession number in GE PACs
+            if (record->event.pressed) {
+                SEND_STRING(
+                    SS_LCTL("f")
+                    SS_DELAY(150)
+                    SS_TAP(X_BSPC)
                     SS_LCTL("v")
                     SS_TAP(X_ENTER)
-                    SS_DELAY(1500)
-                    SS_LALT(SS_LSFT("a"))
+                    SS_DELAY(150)
+                    SS_TAP(X_ENTER)
                 );
             }
             return false;
@@ -247,7 +329,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				SEND_STRING(
 					SS_TAP(X_BTN1)
 					SS_DELAY(50)
-					SS_TAP(X_KP_0)
+					SS_TAP(X_KP_4)
 				);
 			}
 		return false;
@@ -277,6 +359,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				SEND_STRING(
 					SS_TAP(X_BTN1)
 					SS_DELAY(50)
+					SS_TAP(X_KP_7)
+				);
+			}
+		return false;
+
+		case WL_SUBDURAL:
+			if (record->event.pressed) {
+				SEND_STRING(
+					SS_TAP(X_BTN1)
+					SS_DELAY(50)
 					SS_TAP(X_KP_8)
 				);
 			}
@@ -292,6 +384,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			}
 		return false;
 
+		case ELLIPSE:
+			if (record->event.pressed) {
+				SEND_STRING(
+					SS_TAP(X_BTN1)
+					SS_DELAY(50)
+					SS_TAP(X_E)
+				);
+			}
+		return false;
+
 		case MEASURE:
 			if (record->event.pressed) {
 				SEND_STRING(
@@ -302,12 +404,32 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			}
 		return false;
 
-		case ZOOM_CINE:
+		case ROI:
 			if (record->event.pressed) {
 				SEND_STRING(
 					SS_TAP(X_BTN1)
 					SS_DELAY(50)
-					SS_TAP(X_U)
+					SS_LSFT(SS_TAP(X_E))
+				);
+			}
+		return false;
+
+		case ZOOM:
+			if (record->event.pressed) {
+				SEND_STRING(
+					SS_TAP(X_BTN1)
+					SS_DELAY(50)
+					SS_TAP(X_Z)
+				);
+			}
+		return false;
+
+        case INTERZOOM:
+			if (record->event.pressed) {
+				SEND_STRING(
+					SS_TAP(X_BTN1)
+					SS_DELAY(50)
+					SS_LSFT(SS_TAP(X_Z))
 				);
 			}
 		return false;
@@ -318,6 +440,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 					SS_TAP(X_BTN1)
 					SS_DELAY(50)
 					SS_TAP(X_Y)
+				);
+			}
+		return false;
+
+ 		case HANG:
+			if (record->event.pressed) {
+				SEND_STRING(
+					SS_TAP(X_BTN1)
+					SS_DELAY(50)
+					SS_TAP(X_H)
 				);
 			}
 		return false;
@@ -368,8 +500,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			}
 		return false;
 
-		case WHEELDOWN:
 			if (record->event.pressed) {
+		case WHEELDOWN:
 				SEND_STRING(
 					SS_TAP(X_MS_WH_DOWN)
 				);
