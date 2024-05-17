@@ -36,7 +36,11 @@ enum custom_keycodes {
     ELLIPSE,
     ROI,
     INTERZOOM,
-    HANG
+    HANG,
+    MS_UR,
+    MS_DR,
+    MS_UL,
+    MS_DL
 };
 
 enum {
@@ -130,8 +134,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_NO,        ANNOTATION,     WL_SOFT,    WL_LUNG,   WL_VASCULAR, ZOOM,    KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
         OPENEPIC,     WL_BONE,        SCROLLUP,   WL_BRAIN,  ARROW,       KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
         COPYACC,      FAST_UP,        SCROLLDOWN, FAST_DOWN, MEASURE,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,                                            KC_NO,   KC_NO,   KC_NO,
-        OPENGE,                       SPINE_C,    SPINE_T,   SPINE_L,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,               FAST_UP,                     KC_NO,   KC_NO,   KC_NO,   KC_NO,
-        KC_NO,        KC_NO,          MO(1),                             DICTATE,                                       KC_NO,   KC_NO,   KC_NO,   KC_NO,  KC_MS_WH_UP, FAST_DOWN, KC_MS_WH_DOWN,   KC_NO,            KC_NO
+        OPENGE,                       SPINE_C,    SPINE_T,   SPINE_L,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            MS_UL,               KC_MS_U,                     MS_UR,   KC_NO,   KC_NO,   KC_NO,
+        KC_NO,        KC_NO,          MO(1),                             DICTATE,                                      KC_NO,   KC_NO,   KC_NO,   MS_DL,      KC_MS_L, KC_MS_D, KC_MS_R,            MS_DR,            KC_NO
     ),
 
 [1] = LAYOUT(
@@ -141,8 +145,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_NO,        HANG,           KC_TRNS,    WL_LUNG,   KC_TRNS,   INTERZOOM, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
         KC_TRNS,      WL_HARDWARE,    SCROLLUP,   WL_STROKE, ELLIPSE,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
         KC_TRNS,      KC_TRNS,        SCROLLDOWN, FAST_DOWN, ROI,       KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,                                            KC_NO,   KC_NO,   KC_NO,
-        OPENMCKESSON,                 KC_TRNS,    KC_TRNS,   KC_TRNS,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,               KC_TRNS,                     KC_NO,   KC_NO,   KC_NO,   KC_NO,
-        KC_NO,        KC_NO,          KC_TRNS,                           KC_TRNS,                                       KC_NO,   KC_NO,   KC_NO,   KC_NO,    KC_TRNS, KC_TRNS, KC_TRNS,             KC_NO,            KC_NO
+        OPENMCKESSON,                 KC_TRNS,    KC_TRNS,   KC_TRNS,   KC_NO,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_TRNS,             KC_TRNS,                     KC_TRNS, KC_NO,   KC_NO,   KC_NO,
+        KC_NO,        KC_NO,          KC_TRNS,                           KC_TRNS,                                      KC_NO,   KC_NO,   KC_NO,   KC_TRNS,   KC_TRNS, KC_TRNS, KC_TRNS,             KC_TRNS,          KC_NO
     )
 };
 
@@ -531,6 +535,42 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				SEND_STRING(SS_TAP(X_F16));
 			}
 		return false;
+
+        case MS_DL: // Moves the mosue down and to the left
+            if (record->event.pressed) {
+                SEND_STRING(
+                    SS_TAP(X_MS_WH_DOWN)
+                    SS_TAP(X_MS_WH_LEFT)
+                );
+            }
+            return false;
+
+        case MS_DR: // Moves the mosue down and to the right
+            if (record->event.pressed) {
+                SEND_STRING(
+                    SS_TAP(X_MS_WH_DOWN)
+                    SS_TAP(X_MS_WH_RIGHT)
+                );
+            }
+            return false;
+
+        case MS_UL:
+            if (record->event.pressed) {
+                SEND_STRING(
+                    SS_TAP(X_MS_WH_UP)
+                    SS_TAP(X_MS_WH_LEFT)
+                );
+            }
+            return false;
+
+        case MS_UR:
+            if (record->event.pressed) {
+                SEND_STRING(
+                    SS_TAP(X_MS_WH_UP)
+                    SS_TAP(X_MS_WH_RIGHT)
+                );
+            }
+            return false;
     }
     return true; // Process all other keycodes normally.
 }
