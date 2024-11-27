@@ -3,7 +3,6 @@
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_TIMEOUT 200U // Timeout window in ms in which the double tap can occur.
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_LED GP17 // Specify a optional status led by GPIO number which blinks when entering the bootloader
 
-// place overrides here
 #define MOUSEKEY_INTERVAL 16
 #define MOUSEKEY_MAX_SPEED 10
 #undef LOCKING_SUPPORT_ENABLE
@@ -19,7 +18,6 @@
 #define LEADER_PER_KEY_TIMING
 #define LEADER_TIMEOUT 300
 #define LEADER_NO_TIMEOUT
-/* #define DYNAMIC_MACRO_SIZE 32 */
 
 #define AUDIO_PIN B6
 #define AUDIO_CLICKY
@@ -29,12 +27,12 @@
 /* #define TAPPING_TERM 175 */
 #define RETRO_TAPPING
 
+#ifdef RGBLIGHT_ENABLE
+
 // rgb layers
-#ifdef RBGLIGHT_ENABLE
 // underglow related
-#define RGBLED_NUM 20
-#define RGBLIGHT_LED_COUNT RGBLED_NUM
 #define RGBLIGHT_SLEEP
+#define RGBLIGHT_LED_COUNT 20
 #define RGBLIGHT_LIMIT_VAL 180
 #define RGBLIGHT_MAX_LAYERS 8
 

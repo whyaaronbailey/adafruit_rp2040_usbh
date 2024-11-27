@@ -201,9 +201,17 @@ const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
 );
 
 void keyboard_post_init_user(void) {
+
+#ifdef CONSOLE_ENABLE
+    // Customise these values to desired behaviour
+    debug_enable=true;
+    debug_keyboard=true;
+    //debug_mouse=true;
+#endif
+
     // Enable the LED layers
     rgblight_layers = my_rgb_layers;
-    rgblight_set_effect_range(0, RGBLED_NUM);
+    /* rgblight_set_effect_range(0, RGBLIGHT_LED_COUNT); */
 }
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     int mods =get_mods() | get_oneshot_mods();
