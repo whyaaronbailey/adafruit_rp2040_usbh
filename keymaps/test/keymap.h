@@ -1,3 +1,4 @@
+#define LAYOUT_fullsize_ansi LAYOUT
 enum LAYERS {
     LYR_DEFAULT,
     LYR_EXTRAKEYS,
