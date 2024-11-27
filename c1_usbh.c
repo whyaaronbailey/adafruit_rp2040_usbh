@@ -14,14 +14,14 @@ void alarm_pool_create(void) {}
 // Initialize USB host stack on core1
 void c1_usbh(void) {
     pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
-    pio_cfg.pin_dp                  = 16;
+    pio_cfg.pin_dp                  = 0;
     // pio_cfg.extra_error_retry_count = 10;
     pio_cfg.skip_alarm_pool         = true;
     tuh_configure(1, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &pio_cfg);
 
-    gpio_init(18);
-    gpio_set_dir(18, GPIO_OUT);
-    gpio_put(18, 1);
+    gpio_init(40);
+    gpio_set_dir(40, GPIO_OUT);
+    gpio_put(40, 1);
 
     tuh_init(1);
     c1_start_timer();
