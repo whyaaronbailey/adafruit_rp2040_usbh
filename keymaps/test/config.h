@@ -4,7 +4,10 @@
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_LED GP17 // Specify a optional status led by GPIO number which blinks when entering the bootloader
 
 #define MOUSEKEY_INTERVAL 16
-#define MOUSEKEY_MAX_SPEED 10
+#define MOUSEKEY_MAX_SPEED 7
+#define MOUSEKEY_DELAY 0
+#define MOUSEKEY_TIME_TO_MAX 40
+#define MOUSEKEY_WHEEL_DELAY 0
 #undef LOCKING_SUPPORT_ENABLE
 #undef LOCKING_RESYNC_ENABLE
 
