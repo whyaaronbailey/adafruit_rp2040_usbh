@@ -28,9 +28,11 @@
 #define RETRO_TAPPING
 
 #ifdef RGBLIGHT_ENABLE
+// #define WS2812_PIO_USE_PIO1
 
 // rgb layers
 // underglow related
+#define RGBLIGHT_LAYERS
 #define RGBLIGHT_SLEEP
 #define RGBLIGHT_LED_COUNT 20
 #define RGBLIGHT_LIMIT_VAL 180
@@ -48,13 +50,12 @@
 /* #define RGBLIGHT_EFFECT_STATIC_GRADIENT */
 #define RGBLIGHT_EFFECT_TWINKLE
 
-#define RGBLIGHT_LAYERS
 #define RGBLIGHT_LAYERS_OVERRIDE_RGB_OFF
 #define RGBLIGHT_LAYERS_RETAIN_VAL
 
 // GPIO PIN (GP2)2 (physical pin 4)
 #define WS2812_DI_PIN 2
-#define USE_GET_MILLISECOND_TIMER
+/* #define USE_GET_MILLISECOND_TIMER */
 
 //layer blink
 #define RGBLIGHT_LAYER_BLINK

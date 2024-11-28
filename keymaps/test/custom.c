@@ -7,6 +7,11 @@
 /*     &brightness_down_override, */
 /*     NULL */
 /* }; */
+#define MODS_SHIFT(v)  (v & MOD_MASK_SHIFT)
+#define MODS_CTRL(v)   (v & MOD_MASK_CTRL)
+#define MODS_ALT(v)    (v & MOD_MASK_ALT)
+#define MODS_GUI(v)    (v & MOD_MASK_GUI)
+
 #ifdef COMBO_ENABLE
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 combo_t key_combos[] = {
@@ -78,8 +83,8 @@ void shift_finished(tap_dance_state_t *state, void *user_data) {
     switch (shift_tap_state.state) {
         case TD_SINGLE_TAP:
 #ifdef LEADER_ENABLE
-            leader_start();
-            break;
+        leader_start();
+        break;
 #endif
         case TD_SINGLE_HOLD:
             register_mods(MOD_LSFT);
@@ -117,11 +122,6 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_WIN_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_TAB, LGUI(KC_TAB)),
 };
 #endif
-
-#define MODS_SHIFT(v)  (v & MOD_MASK_SHIFT)
-#define MODS_CTRL(v)   (v & MOD_MASK_CTRL)
-#define MODS_ALT(v)    (v & MOD_MASK_ALT)
-#define MODS_GUI(v)    (v & MOD_MASK_GUI)
 
 #ifdef OLED_ENABLE
 
@@ -167,7 +167,7 @@ bool oled_task_user(void) {
 }
 #endif
 
-#ifdef RGBLIGHT_LAYERS
+#ifdef RGBLIGHT_ENABLE
 const rgblight_segment_t PROGMEM extra_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {8, 4, HSV_BLUE}       // Light 4 LEDs, starting with LED 6
 );
@@ -200,48 +200,32 @@ const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
     my_gui_layer
 );
 
-void keyboard_post_init_user(void) {
-
-#ifdef CONSOLE_ENABLE
-    // Customise these values to desired behaviour
-    debug_enable=true;
-    debug_keyboard=true;
-    //debug_mouse=true;
-#endif
-
-    // Enable the LED layers
-    rgblight_layers = my_rgb_layers;
-    /* rgblight_set_effect_range(0, RGBLIGHT_LED_COUNT); */
-}
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     int mods =get_mods() | get_oneshot_mods();
     if ( (mods  & MOD_MASK_SHIFT)
-            || (mods  & MOD_MASK_ALT)
-            || (mods && MOD_MASK_GUI)
-            || (mods && MOD_MASK_CTRL)){
-    rgblight_set_layer_state(2, MODS_ALT(mods));
-    rgblight_set_layer_state(3, MODS_SHIFT(mods));
-    rgblight_set_layer_state(4, MODS_CTRL(mods));
-    rgblight_set_layer_state(5, MODS_GUI(mods));
+        || (mods  & MOD_MASK_ALT)
+        || (mods && MOD_MASK_GUI)
+        || (mods && MOD_MASK_CTRL)){
+        rgblight_set_layer_state(2, MODS_ALT(mods));
+        rgblight_set_layer_state(3, MODS_SHIFT(mods));
+        rgblight_set_layer_state(4, MODS_CTRL(mods));
+        rgblight_set_layer_state(5, MODS_GUI(mods));
 
     } else {
-    rgblight_set_layer_state(2, 0);
-    rgblight_set_layer_state(3, 0);
-    rgblight_set_layer_state(4, 0);
-    rgblight_set_layer_state(5, 0);
+        rgblight_set_layer_state(2, 0);
+        rgblight_set_layer_state(3, 0);
+        rgblight_set_layer_state(4, 0);
+        rgblight_set_layer_state(5, 0);
     }
 }
-
-layer_state_t layer_state_set_user(layer_state_t state) {
+layer_state_t default_layer_state_set_user(layer_state_t state) {
     rgblight_set_layer_state(0, layer_state_cmp(state, LYR_EXTRAKEYS));
     rgblight_set_layer_state(1, layer_state_cmp(state, LYR_RGB));
     return state;
 }
 
-#endif
 
-#define LED0 B0
-#define LED1 D5
+#endif
 
 #ifdef LEADER_ENABLE
 uint8_t leaderCSFT = 0;
@@ -295,3 +279,18 @@ void leader_end_user(void) {
 /* } */
 #endif
 
+void keyboard_post_init_user(void) {
+
+#ifdef CONSOLE_ENABLE
+    // Customise these values to desired behaviour
+    debug_enable=true;
+    debug_keyboard=true;
+    //debug_mouse=true;
+#endif
+
+#ifdef RGBLIGHT_ENABLE
+    // Enable the LED layers
+    rgblight_layers = my_rgb_layers;
+    rgblight_set_effect_range(0, RGBLIGHT_LED_COUNT);
+#endif
+}
