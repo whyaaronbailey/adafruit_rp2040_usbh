@@ -7,6 +7,7 @@
 /*     &brightness_down_override, */
 /*     NULL */
 /* }; */
+#include "print.h"
 #define MODS_SHIFT(v)  (v & MOD_MASK_SHIFT)
 #define MODS_CTRL(v)   (v & MOD_MASK_CTRL)
 #define MODS_ALT(v)    (v & MOD_MASK_ALT)
@@ -87,10 +88,7 @@ void shift_finished(tap_dance_state_t *state, void *user_data) {
         break;
 #endif
         case TD_SINGLE_HOLD:
-            register_mods(MOD_LSFT);
-            break;
-        case TD_DOUBLE_TAP:
-            set_oneshot_mods(MOD_LALT);
+            register_mods(MOD_RSFT);
             break;
         default:
             break;
@@ -98,18 +96,26 @@ void shift_finished(tap_dance_state_t *state, void *user_data) {
 }
 
 void shift_reset(tap_dance_state_t *state, void *user_data) {
+    switch (shift_tap_state.state) {
+        case TD_SINGLE_TAP:
+            break;
 
-    if (shift_tap_state.state == TD_SINGLE_HOLD) {
-        unregister_mods(MOD_LSFT);
+        case TD_SINGLE_HOLD:
+            unregister_mods(MOD_RSFT);
+            break;
+        default: break;
     }
-
-    /* if (shift_tap_state.state == TD_DOUBLE_TAP) { */
-    /*     clear_oneshot_mods(); */
-    /* } */
 
     shift_tap_state.state = TD_NONE;
 }
-
+void td_bsls(tap_dance_state_t *state, void *user_data) {
+    if (state->count > 1) {
+        leader_start();
+    } else {
+        tap_code(KC_BSLS);
+    }
+    reset_tap_dance(state);
+}
 // Associate our tap dance key with its functionality
 // Tap Dance definitions
 tap_dance_action_t tap_dance_actions[] = {
@@ -117,8 +123,11 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_PS_2] = ACTION_TAP_DANCE_LAYER_TOGGLE(KC_PSCR, 2),
     // [TD_COPY] = ACTION_TAP_DANCE_DOUBLE(KC_C, LCTL(KC_C)),
     // [TD_PASTE] = ACTION_TAP_DANCE_DOUBLE(KC_V, LCTL(KC_V)),
-    [TD_BSLS_ALTTAB] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, bsls_finished, bsls_reset),
-    [TD_SHIFT] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, shift_finished, shift_reset),
+    [TD_BSLS] = ACTION_TAP_DANCE_FN(td_bsls),
+    /* [TD_SHIFT] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, shift_finished, shift_reset), */
+    [TD_F10] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F10, 2),
+    [TD_F11] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F11, 1),
+    [TD_F12] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F12, 0),
     [TD_WIN_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_TAB, LGUI(KC_TAB)),
 };
 #endif
@@ -293,4 +302,16 @@ void keyboard_post_init_user(void) {
     rgblight_layers = my_rgb_layers;
     rgblight_set_effect_range(0, RGBLIGHT_LED_COUNT);
 #endif
+    uprintf("completed post_init_user");
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    int layer = get_highest_layer(state);
+    int keyCode = KC_F12 - layer;
+    register_code(KC_LSFT);
+    register_code(keyCode);
+    unregister_code(keyCode);
+    unregister_code(KC_LSFT);
+    layer_debug();
+    return state;
 }

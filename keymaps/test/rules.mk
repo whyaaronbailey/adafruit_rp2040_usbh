@@ -7,6 +7,7 @@ WS2812_DRIVER=vendor
 
 INTROSPECTION_KEYMAP_C = custom.c
 
+COMMAND_ENABLE=yes
 MAGIC_ENABLE=yes
 COMBO_ENABLE=yes
 SPACE_CADET_ENABLE=no
@@ -17,7 +18,6 @@ MOUSEKEY_ENABLE=yes
 # too much space
 AUDIO_ENABLE=no
 # deprecated in favor of MAGIC
-# COMMAND_ENABLE=no
 
 #linux doesn't recognize...
 PROGRAMMABLE_BUTTON_ENABLE = no

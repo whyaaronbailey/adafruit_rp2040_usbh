@@ -9,8 +9,10 @@ enum LAYERS {
 // Tap Dance keycodes
 enum td_keycodes {
     TD_PS_2,
-    TD_BSLS_ALTTAB,
-    TD_SHIFT,
+    TD_BSLS,
+    TD_F10,
+    TD_F11,
+    TD_F12,
     // TD_COPY,
     // TD_PASTE,
     TD_WIN_TAB,

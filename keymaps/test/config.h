@@ -11,6 +11,7 @@
 #undef LOCKING_SUPPORT_ENABLE
 #undef LOCKING_RESYNC_ENABLE
 
+#define TAPPING_TOGGLE 2
 #define LAYER_STATE_8BIT
 #define OLED_DISPLAY_128X64
 #define OLED_TIMEOUT 10000
@@ -18,8 +19,12 @@
 #define OLED_FADE_OUT_INTERVAL 2
 
 #define COMBO_TERM 100
-#define LEADER_PER_KEY_TIMING
+
+/// leader options - backslash mod_tap
 #define LEADER_TIMEOUT 300
+// time between each leader
+#define LEADER_PER_KEY_TIMING
+// no timeout after leader initialized
 #define LEADER_NO_TIMEOUT
 
 #define AUDIO_PIN B6
@@ -27,7 +32,7 @@
 #define NO_MUSIC_MODE
 
 // tap dance and related
-/* #define TAPPING_TERM 175 */
+#define TAPPING_TERM 300
 #define RETRO_TAPPING
 
 #ifdef RGBLIGHT_ENABLE
