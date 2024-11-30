@@ -16,9 +16,11 @@
 #ifdef COMBO_ENABLE
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 const uint16_t PROGMEM esc_combo[] = {KC_ESC, KC_ESC, COMBO_END};
+const uint16_t PROGMEM sd_combo[] = {KC_S, KC_D, COMBO_END};
 combo_t key_combos[] = {
     COMBO(jk_combo, KC_ESC),
     COMBO(esc_combo, QK_LEAD),
+    COMBO(sd_combo, QK_LEAD),
 };
 #endif
 
@@ -46,7 +48,7 @@ static td_tap_t bsls_tap_state = {
     .is_press_action = true,
     .state = TD_NONE
 };
-static td_tap_t shift_tap_state = {
+static td_tap_t capslock_tap_state = {
     .is_press_action = true,
     .state = TD_NONE
 };
@@ -78,38 +80,49 @@ void bsls_reset(tap_dance_state_t *state, void *user_data) {
     if (bsls_tap_state.state == TD_DOUBLE_TAP) {
         clear_oneshot_layer_state(ONESHOT_PRESSED);
     }
+    /* reset_tap_dance(state); */
     bsls_tap_state.state = TD_NONE;
 }
 
-void shift_finished(tap_dance_state_t *state, void *user_data) {
-    shift_tap_state.state = cur_dance(state);
-    switch (shift_tap_state.state) {
+void capslock_finished(tap_dance_state_t *state, void *user_data) {
+    capslock_tap_state.state = cur_dance(state);
+    switch (capslock_tap_state.state) {
         case TD_SINGLE_TAP:
-#ifdef LEADER_ENABLE
-        leader_start();
-        break;
-#endif
-        case TD_SINGLE_HOLD:
-            register_mods(MOD_RSFT);
+           register_code(KC_ESC);
             break;
+
+        case TD_DOUBLE_TAP:
+            leader_start();
+            break;
+
+        case TD_SINGLE_HOLD:
+           register_code(KC_LCTL);
+           break;
+
         default:
             break;
     }
 }
 
-void shift_reset(tap_dance_state_t *state, void *user_data) {
-    switch (shift_tap_state.state) {
+void capslock_reset(tap_dance_state_t *state, void *user_data) {
+    switch (capslock_tap_state.state) {
         case TD_SINGLE_TAP:
+            unregister_code(KC_ESC);
+            break;
+
+        case TD_DOUBLE_TAP:
+            /* leader_end(); */
             break;
 
         case TD_SINGLE_HOLD:
-            unregister_mods(MOD_RSFT);
+            unregister_code(KC_LCTL);
             break;
         default: break;
     }
-
-    shift_tap_state.state = TD_NONE;
+    /* reset_tap_dance(state); */
+    capslock_tap_state.state = TD_NONE;
 }
+
 void td_bsls(tap_dance_state_t *state, void *user_data) {
     if (state->count > 1) {
         leader_start();
@@ -123,12 +136,17 @@ void td_bsls(tap_dance_state_t *state, void *user_data) {
 tap_dance_action_t tap_dance_actions[] = {
     // Tap PS once for print screen, double tap to toggle mousekeys
     [TD_PS_2] = ACTION_TAP_DANCE_LAYER_TOGGLE(KC_PSCR, 2),
-    // [TD_COPY] = ACTION_TAP_DANCE_DOUBLE(KC_C, LCTL(KC_C)),
-    // [TD_PASTE] = ACTION_TAP_DANCE_DOUBLE(KC_V, LCTL(KC_V)),
+
+    // tap once for \|; double tap for QK_LEAD
     [TD_BSLS] = ACTION_TAP_DANCE_FN(td_bsls),
-    /* [TD_SHIFT] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, shift_finished, shift_reset), */
+
+    // CapsLock -
+    //      tap once - Escape
+    //      tap twice - QK_LEAD
+    //      hold      - Control
+    [TD_CAPS_LDR] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, capslock_finished, capslock_reset),
     [TD_F10] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F10, 2),
-    [TD_F11] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F11, 1),
+    /* [TD_F11] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F11, 1), */
     [TD_F12] = ACTION_TAP_DANCE_LAYER_MOVE(KC_F12, 0),
     [TD_WIN_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_TAB, LGUI(KC_TAB)),
 };
@@ -262,6 +280,9 @@ void leader_end_user(void) {
     }
     if (leader_sequence_one_key(KC_L)) {
         SEND_STRING("ra-int\\rrajagopala");
+    }
+    if (leader_sequence_one_key(KC_F11)) {
+        layer_on(LYR_EXTRAKEYS);
     }
     if (leader_sequence_one_key(KC_MINS)) {
         SEND_STRING("->");
