@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
@@ -35,6 +35,7 @@ void osal_task_delay(uint32_t msec);
 osal_mutex_t osal_mutex_create(osal_mutex_def_t* mdef);
 bool osal_mutex_lock (osal_mutex_t mutex_hdl, uint32_t msec);
 bool osal_mutex_unlock(osal_mutex_t mutex_hdl);
+bool osal_mutex_delete(osal_mutex_t mutex_hdl);
 
 //--------------------------------------------------------------------+
 // QUEUE API
@@ -113,6 +114,12 @@ TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_empty(osal_queue_t qhdl)
   // with interrupt disabled before going into low power mode
   return tu_fifo_empty(&qhdl->ff);
 }
+
+TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_delete(osal_queue_t qhdl) {
+  (void) qhdl;
+  return true; // nothing to do
+}
+
 #ifdef __cplusplus
  }
 #endif
