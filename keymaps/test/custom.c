@@ -7,6 +7,7 @@
 /*     &brightness_down_override, */
 /*     NULL */
 /* }; */
+#include "monaspace.qff.h"
 #include "print.h"
 #define MODS_SHIFT(v)  (v & MOD_MASK_SHIFT)
 #define MODS_CTRL(v)   (v & MOD_MASK_CTRL)
@@ -16,11 +17,11 @@
 #ifdef COMBO_ENABLE
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 const uint16_t PROGMEM sd_combo[] = {KC_S, KC_D, COMBO_END};
-const uint16_t PROGMEM ui_combo[] = {KC_U, KC_I, COMBO_END};
+const uint16_t PROGMEM iu_combo[] = {KC_I, KC_U, COMBO_END};
 combo_t key_combos[] = {
     COMBO(jk_combo, KC_ESC),
     COMBO(sd_combo, QK_LEAD),
-    COMBO(ui_combo, QK_LEAD),
+    COMBO(iu_combo, QK_LEAD),
 };
 #endif
 
@@ -152,21 +153,78 @@ tap_dance_action_t tap_dance_actions[] = {
 };
 #endif
 
+
+#ifdef QUANTUM_PAINTER_ENABLE
+static painter_device_t display;
+static painter_font_handle_t my_font;
+void keyboard_post_init_kb(void) {
+    uprintf("in keyboard_post_init_kb");
+    display = qp_sh1106_make_i2c_device(128, 64, 0x3c);
+    qp_init(display, QP_ROTATION_0);
+    my_font = qp_load_font_mem(font_monaspace);
+    /* if (my_font != NULL) { */
+        static const char *text = "Hello from QMK!";
+        int16_t width = qp_textwidth(my_font, text);
+        qp_drawtext(display, (128 - width), (64 - my_font->line_height), my_font, text);
+    /* } */
+}
+
+uint8_t mod_state;
+void housekeeping_task_user() {
+    qp_clear(display);
+    switch (get_highest_layer(layer_state)) {
+        case 0:
+            qp_drawtext(display, 0, 0,my_font, "DEFAULT");
+            break;
+        case 1:
+            qp_drawtext(display, 0, 0,my_font, "EXTRAKEYS");
+            break;
+        case 2:
+            qp_drawtext(display, 0, 0,my_font, "CTRL");
+            break;
+        default:
+            // Or use the write_ln shortcut over adding '\n' to the end of your string
+            // oled_write_ln_P(PSTR("NA"), false);
+            break;
+    }
+    mod_state = get_mods();
+    char buffer[20];
+    char* SHIFT = (mod_state & MOD_MASK_SHIFT) ? "SHF": "";
+    char* CTRL = (mod_state & MOD_MASK_CTRL) ? "CTL": "";
+    char* ALT = (mod_state & MOD_MASK_ALT) ? "ALT": "";
+    char* GUI = (mod_state & MOD_MASK_GUI) ? "GUI": "";
+    sprintf(buffer, "%s %s %s %s", SHIFT, CTRL, ALT, GUI);
+    qp_drawtext(display, 0, my_font->line_height, my_font, buffer);
+
+    if (leader_sequence_active()) {
+        qp_drawtext(display, 0, my_font->line_height * 2, my_font, "LEADER..");
+    }
+
+
+
+
+}
+#endif
+
 #ifdef OLED_ENABLE
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
 }
 bool oled_task_user(void) {
+
     // Host Keyboard Layer Status
     oled_write_P(PSTR("LYR: "), false);
-    /* oled_write_P(get_u8_str(get_highest_layer(layer_state), ' '), false); */
+    oled_write_P(get_u8_str(get_highest_layer(layer_state), ' '), false);
     switch (get_highest_layer(layer_state)) {
         case 0:
             oled_write_P(PSTR("DFLT\n"), false);
             break;
         case 1:
             oled_write_P(PSTR("XTRA\n"), false);
+            break;
+        case 1:
+            oled_write_P(PSTR("CTRL\n"), false);
             break;
         default:
             // Or use the write_ln shortcut over adding '\n' to the end of your string
