@@ -154,55 +154,95 @@ tap_dance_action_t tap_dance_actions[] = {
 #endif
 
 
+
+static uint8_t prev_mod_state;
+static layer_state_t prev_layer_state;
+
+void init_quantum_painter(void);
+void updateLayerDisplay(layer_state_t layer, bool force);
+void updateModDisplay(void);
+void updateLeaderDisplay(bool isActive);
+#ifndef QUANTUM_PAINTER_ENABLE
+void init_quantum_painter() {}
+void updateLayerDisplay(layer_state_t layer, bool force) {}
+void updateLeaderDisplay(bool isActive){}
+#endif
+
 #ifdef QUANTUM_PAINTER_ENABLE
+#define DISPLAY_WIDTH 128
+#define DISPLAY_HEIGHT 64
+#define I2C_ADDRESS 0x3c
+#define LINENO(v,lh) (v*lh)
 static painter_device_t display;
 static painter_font_handle_t my_font;
-void keyboard_post_init_kb(void) {
-    uprintf("in keyboard_post_init_kb");
-    display = qp_sh1106_make_i2c_device(128, 64, 0x3c);
-    qp_init(display, QP_ROTATION_0);
-    my_font = qp_load_font_mem(font_monaspace);
-    /* if (my_font != NULL) { */
-        static const char *text = "Hello from QMK!";
-        int16_t width = qp_textwidth(my_font, text);
-        qp_drawtext(display, (128 - width), (64 - my_font->line_height), my_font, text);
-    /* } */
+static int line_height;
+static uint8_t logoIsDisplayed = 1;
+void displayLogo(void);
+void hideLogo(void);
+
+void displayLogo() {
+    static const char *text = "QMK!";
+    int16_t width = qp_textwidth(my_font, text);
+    qp_drawtext(display, (DISPLAY_WIDTH - width)/2, (DISPLAY_HEIGHT - line_height)/2, my_font, text);
 }
 
-uint8_t mod_state;
-void housekeeping_task_user() {
-    qp_clear(display);
-    switch (get_highest_layer(layer_state)) {
-        case 0:
-            qp_drawtext(display, 0, 0,my_font, "DEFAULT");
-            break;
-        case 1:
-            qp_drawtext(display, 0, 0,my_font, "EXTRAKEYS");
-            break;
-        case 2:
-            qp_drawtext(display, 0, 0,my_font, "CTRL");
-            break;
-        default:
-            // Or use the write_ln shortcut over adding '\n' to the end of your string
-            // oled_write_ln_P(PSTR("NA"), false);
-            break;
+void hideLogo() {
+    if (logoIsDisplayed) {
+        logoIsDisplayed = 0;
+        static const char *text = "    ";
+        int16_t width = qp_textwidth(my_font, text);
+        qp_drawtext(display, (DISPLAY_WIDTH - width)/2, (DISPLAY_HEIGHT - line_height)/2, my_font, text);
     }
-    mod_state = get_mods();
+}
+void init_quantum_painter(void) {
+    display = qp_sh1106_make_i2c_device(DISPLAY_WIDTH, DISPLAY_HEIGHT, I2C_ADDRESS);
+    qp_init(display, QP_ROTATION_0);
+    my_font = qp_load_font_mem(font_monaspace);
+    static const char *text = "QMK!";
+    int16_t width = qp_textwidth(my_font, text);
+    line_height = my_font->line_height;
+    qp_drawtext(display, (DISPLAY_WIDTH - width)/2, (DISPLAY_HEIGHT - line_height)/2, my_font, text);
+    qp_drawtext(display, 0, LINENO(0, line_height), my_font, "DEFAULT  ");
+}
+
+void updateLayerDisplay(layer_state_t layer_state, bool force) {
+    if (force || layer_state != prev_layer_state) {
+        prev_layer_state = layer_state;
+        switch (get_highest_layer(layer_state)) {
+            case 0:
+                qp_drawtext(display, 0, LINENO(0, line_height),my_font, "DEFAULT  ");
+                break;
+            case 1:
+                qp_drawtext(display, 0, LINENO(0, line_height),my_font, "EXTRAKEYS");
+                break;
+            case 2:
+                qp_drawtext(display, 0, LINENO(0, line_height),my_font, "CONTROL  ");
+                break;
+            default:
+                // Or use the write_ln shortcut over adding '\n' to the end of your string
+                // oled_write_ln_P(PSTR("NA"), false);
+                break;
+        }
+    }
+}
+
+void updateModDisplay() {
+    hideLogo();
+    int mod_state = get_mods();
     char buffer[20];
-    char* SHIFT = (mod_state & MOD_MASK_SHIFT) ? "SHF": "";
-    char* CTRL = (mod_state & MOD_MASK_CTRL) ? "CTL": "";
-    char* ALT = (mod_state & MOD_MASK_ALT) ? "ALT": "";
-    char* GUI = (mod_state & MOD_MASK_GUI) ? "GUI": "";
-    sprintf(buffer, "%s %s %s %s", SHIFT, CTRL, ALT, GUI);
-    qp_drawtext(display, 0, my_font->line_height, my_font, buffer);
-
-    if (leader_sequence_active()) {
-        qp_drawtext(display, 0, my_font->line_height * 2, my_font, "LEADER..");
+    if (mod_state != prev_mod_state) {
+        prev_mod_state = mod_state;
+        char* SHIFT = (mod_state & MOD_MASK_SHIFT) ? "SHF": "   ";
+        char* CTRL = (mod_state & MOD_MASK_CTRL) ? "CTL": "   ";
+        char* ALT = (mod_state & MOD_MASK_ALT) ? "ALT": "   ";
+        char* GUI = (mod_state & MOD_MASK_GUI) ? "GUI": "   ";
+        sprintf(buffer, "%s %s %s %s", SHIFT, CTRL, ALT, GUI);
+        qp_drawtext(display, 0, LINENO(1, line_height), my_font, buffer);
     }
-
-
-
-
+}
+void updateLeaderDisplay(bool isActive) {
+    char *text = isActive ? "LEADER...": "         ";
+    qp_drawtext(display, 0, LINENO(2, line_height), my_font, text);
 }
 #endif
 
@@ -254,7 +294,44 @@ bool oled_task_user(void) {
 }
 #endif
 
+void rgblight_layers_init(void);
+void rgblight_layers_update_mods(void);
+void rgblight_default_layer_set(layer_state_t state);
+
+#ifndef RGBLIGHT_ENABLE
+void rgblight_layers_init() {}
+void rgblight_layers_update_mods() {}
+void rgblight_default_layer_set(layer_state_t state) {}
+#endif
+
 #ifdef RGBLIGHT_ENABLE
+void rgblight_layers_init() {
+    // Enable the LED layers
+    rgblight_layers = my_rgb_layers;
+    rgblight_set_effect_range(0, RGBLIGHT_LED_COUNT);
+}
+void rgblight_layers_update_mods() {
+    int mods = get_mods() | get_oneshot_mods();
+    if ( (mods  & MOD_MASK_SHIFT)
+        || (mods & MOD_MASK_ALT)
+        || (mods & MOD_MASK_GUI)
+        || (mods & MOD_MASK_CTRL)){
+        rgblight_set_layer_state(2, MODS_ALT(mods));
+        rgblight_set_layer_state(3, MODS_SHIFT(mods));
+        rgblight_set_layer_state(4, MODS_CTRL(mods));
+        rgblight_set_layer_state(5, MODS_GUI(mods));
+
+    } else {
+        rgblight_set_layer_state(2, 0);
+        rgblight_set_layer_state(3, 0);
+        rgblight_set_layer_state(4, 0);
+        rgblight_set_layer_state(5, 0);
+    }
+}
+void rgblight_default_layer_set(layer_state_t state) {
+    rgblight_set_layer_state(0, layer_state_cmp(state, LYR_EXTRAKEYS));
+    rgblight_set_layer_state(1, layer_state_cmp(state, LYR_RGB));
+}
 const rgblight_segment_t PROGMEM extra_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {8, 4, HSV_BLUE}       // Light 4 LEDs, starting with LED 6
 );
@@ -286,33 +363,10 @@ const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
     my_ctrl_layer,
     my_gui_layer
 );
-
-void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
-    int mods =get_mods() | get_oneshot_mods();
-    if ( (mods  & MOD_MASK_SHIFT)
-        || (mods  & MOD_MASK_ALT)
-        || (mods && MOD_MASK_GUI)
-        || (mods && MOD_MASK_CTRL)){
-        rgblight_set_layer_state(2, MODS_ALT(mods));
-        rgblight_set_layer_state(3, MODS_SHIFT(mods));
-        rgblight_set_layer_state(4, MODS_CTRL(mods));
-        rgblight_set_layer_state(5, MODS_GUI(mods));
-
-    } else {
-        rgblight_set_layer_state(2, 0);
-        rgblight_set_layer_state(3, 0);
-        rgblight_set_layer_state(4, 0);
-        rgblight_set_layer_state(5, 0);
-    }
-}
-layer_state_t default_layer_state_set_user(layer_state_t state) {
-    rgblight_set_layer_state(0, layer_state_cmp(state, LYR_EXTRAKEYS));
-    rgblight_set_layer_state(1, layer_state_cmp(state, LYR_RGB));
-    return state;
-}
-
-
 #endif
+
+
+
 
 #ifdef LEADER_ENABLE
 uint8_t leaderCSFT = 0;
@@ -326,6 +380,10 @@ void toggleCSFT (void) {
     }
 
     leaderCSFT = !leaderCSFT;
+}
+
+void leader_start_user(void) {
+    updateLeaderDisplay(true);
 }
 
 void leader_end_user(void) {
@@ -362,37 +420,38 @@ void leader_end_user(void) {
         unregister_code(KC_LCTL);
         unregister_code(KC_LALT);
     }
+    updateLeaderDisplay(false);
 }
 
-/* void leader_end(void) { */
-/*     clear_oneshot_layer_state(ONESHOT_PRESSED); */
-/* } */
 #endif
+
+void keyboard_post_init_kb(void) {
+    init_quantum_painter();
+    keyboard_post_init_user();
+}
 
 void keyboard_post_init_user(void) {
 
-#ifdef CONSOLE_ENABLE
-    // Customise these values to desired behaviour
-    debug_enable=true;
-    debug_keyboard=true;
-    //debug_mouse=true;
-#endif
-
-#ifdef RGBLIGHT_ENABLE
-    // Enable the LED layers
-    rgblight_layers = my_rgb_layers;
-    rgblight_set_effect_range(0, RGBLIGHT_LED_COUNT);
-#endif
+    #ifdef CONSOLE_ENABLE
+        // Customise these values to desired behaviour
+        debug_enable=true;
+        /* debug_keyboard=true; */
+        //debug_mouse=true;
+    #endif
+    rgblight_layers_init();
+    /* updateLayerDisplay(layer_state, true); */
     uprintf("completed post_init_user");
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    int layer = get_highest_layer(state);
-    int keyCode = KC_F12 - layer;
-    register_code(KC_LSFT);
-    register_code(keyCode);
-    unregister_code(keyCode);
-    unregister_code(KC_LSFT);
-    layer_debug();
+    updateLayerDisplay(state, false);
+    return state;
+}
+void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    rgblight_layers_update_mods();
+    updateModDisplay();
+}
+layer_state_t default_layer_state_set_user(layer_state_t state) {
+    rgblight_default_layer_set(state);
     return state;
 }
