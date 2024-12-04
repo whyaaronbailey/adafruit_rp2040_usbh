@@ -17,11 +17,11 @@
 #ifdef COMBO_ENABLE
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 const uint16_t PROGMEM sd_combo[] = {KC_S, KC_D, COMBO_END};
-const uint16_t PROGMEM iu_combo[] = {KC_I, KC_U, COMBO_END};
+const uint16_t PROGMEM ui_combo[] = {KC_U, KC_I, COMBO_END};
 combo_t key_combos[] = {
     COMBO(jk_combo, KC_ESC),
     COMBO(sd_combo, QK_LEAD),
-    COMBO(iu_combo, QK_LEAD),
+    COMBO(ui_combo, QK_LEAD),
 };
 #endif
 
