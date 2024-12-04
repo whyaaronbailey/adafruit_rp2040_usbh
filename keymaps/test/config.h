@@ -1,7 +1,7 @@
 #pragma once
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET // Activates the double-tap behavior
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_TIMEOUT 200U // Timeout window in ms in which the double tap can occur.
-#define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_LED GP17 // Specify a optional status led by GPIO number which blinks when entering the bootloader
+#define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_LED GP25 // Specify a optional status led by GPIO number which blinks when entering the bootloader
 
 #define MOUSEKEY_INTERVAL 16
 #define MOUSEKEY_MAX_SPEED 7
@@ -27,9 +27,16 @@
 // no timeout after leader initialized
 #define LEADER_NO_TIMEOUT
 
-#define AUDIO_PIN B6
-#define AUDIO_CLICKY
-#define NO_MUSIC_MODE
+#ifdef AUDIO_ENABLE
+#define AUDIO_PIN GP16
+#define AUDIO_PWM_DRIVER PWMD0
+#define AUDIO_PWM_CHANNEL RP2040_PWM_CHANNEL_A
+#define AUDIO_ENABLE_TONE_MULTIPLEXING
+#define AUDIO_TONE_MULTIPLEXING_RATE_DEFAULT 10
+#define AUDIO_INIT_DELAY
+#define STARTUP_SONG SONG(STARTUP_SOUND)
+#endif
+/* #define AUDIO_CLICKY */
 
 // tap dance and related
 #define TAPPING_TERM 300

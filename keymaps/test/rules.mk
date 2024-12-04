@@ -1,3 +1,4 @@
+# BOARD=GENERIC_RP_RP2040
 BOOTLOADER=rp2040
 EXTRAKEY_ENABLE=yes
 TAP_DANCE_ENABLE=yes
@@ -20,8 +21,8 @@ DYNAMIC_MACRO_ENABLE=yes
 MOUSEKEY_ENABLE=yes
 
 # too much space
-AUDIO_ENABLE=no
-# deprecated in favor of MAGIC
+AUDIO_ENABLE=yes
+AUDIO_DRIVER=pwm_hardware
 
 #linux doesn't recognize...
 PROGRAMMABLE_BUTTON_ENABLE = no

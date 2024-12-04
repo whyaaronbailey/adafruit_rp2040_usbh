@@ -7,3 +7,6 @@
 
 #undef RP_CORE1_START
 #define RP_CORE1_START TRUE
+#undef RP_PWM_USE_PWM0
+#define RP_PWM_USE_PWM0 TRUE
+
