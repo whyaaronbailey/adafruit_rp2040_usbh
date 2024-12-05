@@ -35,8 +35,8 @@
 #define AUDIO_TONE_MULTIPLEXING_RATE_DEFAULT 10
 #define AUDIO_INIT_DELAY
 #define STARTUP_SONG SONG(STARTUP_SOUND)
+#define AUDIO_CLICKY
 #endif
-/* #define AUDIO_CLICKY */
 
 // tap dance and related
 #define TAPPING_TERM 300
