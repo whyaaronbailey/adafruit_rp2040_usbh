@@ -24,6 +24,12 @@ osal_mutex_t osal_mutex_create(osal_mutex_def_t *mdef) {
     return mdef;
 }
 
+/* TU_ATTR_ALWAYS_INLINE static inline bool osal_mutex_delete(osal_mutex_t mutex_hdl) { */
+bool osal_mutex_delete(osal_mutex_t mutex_hdl) {
+  (void) mutex_hdl;
+  return true; // nothing to do
+}
+
 #include <stdarg.h>
 
 static char     debug_buffer[(1 << 12)];

@@ -36,11 +36,7 @@ enum custom_keycodes {
     ELLIPSE,
     ROI,
     INTERZOOM,
-    HANG,
-    MS_UR,
-    MS_DR,
-    MS_UL,
-    MS_DL
+    HANG
 };
 
 enum {
@@ -134,8 +130,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_NO,        ANNOTATION,     WL_SOFT,    WL_LUNG,   WL_VASCULAR, ZOOM,    KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
         OPENEPIC,     WL_BONE,        SCROLLUP,   WL_BRAIN,  ARROW,       KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_NO,   KC_NO,   KC_NO,              KC_NO,   KC_NO,   KC_NO,   KC_NO,
         COPYACC,      FAST_UP,        SCROLLDOWN, FAST_DOWN, MEASURE,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,                                            KC_NO,   KC_NO,   KC_NO,
-        OPENGE,                       SPINE_C,    SPINE_T,   SPINE_L,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            MS_UL,               KC_MS_U,                     MS_UR,   KC_NO,   KC_NO,   KC_NO,
-        KC_NO,        KC_NO,          MO(1),                             DICTATE,                                      KC_NO,   KC_NO,   KC_NO,   MS_DL,      KC_MS_L, KC_MS_D, KC_MS_R,            MS_DR,            KC_NO
+        OPENGE,                       SPINE_C,    SPINE_T,   SPINE_L,     KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,            KC_NO,               KC_MS_U,                     KC_NO,   KC_NO,   KC_NO,   KC_NO,
+        KC_NO,        KC_NO,          MO(1),                             DICTATE,                                      KC_NO,   KC_NO,   KC_NO,   KC_NO,      KC_MS_L, KC_MS_D, KC_MS_R,            KC_NO,            KC_NO
     ),
 
 [1] = LAYOUT(
@@ -156,8 +152,8 @@ tap_dance_action_t tap_dance_actions[] = {
   [TD_PAN_CINE]  = ACTION_TAP_DANCE_DOUBLE(KC_P, KC_U)  // tap once for P, twice for U
 };
 
-static uint16_t REP_DELAY = 275; // Common delay for both scroll up and down
-static uint16_t REP_DELAY_FAST = 150; // Common delay for both scroll up and down
+static uint16_t REP_DELAY = 290; // Common delay for both scroll up and down
+static uint16_t REP_DELAY_FAST = 120; // Common delay for both scroll up and down
 
 uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
     bool is_up = (bool)cb_arg;
@@ -266,11 +262,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LCTL("2")
-                    SS_DELAY(2000)
+                    SS_DELAY(2500)
                     SS_LCTL("v")
-                    SS_DELAY(250)
+                    SS_DELAY(500)
                     SS_TAP(X_ENTER)
-                    SS_DELAY(2000)
+                    SS_DELAY(2500)
                     SS_LALT(SS_LSFT("a"))
                 );
             }
@@ -280,11 +276,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LCTL("f")
-                    SS_DELAY(150)
+                    SS_DELAY(500)
                     SS_TAP(X_BSPC)
                     SS_LCTL("v")
                     SS_TAP(X_ENTER)
-                    SS_DELAY(150)
+                    SS_DELAY(500)
                     SS_TAP(X_ENTER)
                 );
             }
@@ -536,41 +532,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			}
 		return false;
 
-        case MS_DL: // Moves the mosue down and to the left
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_TAP(X_MS_WH_DOWN)
-                    SS_TAP(X_MS_WH_LEFT)
-                );
-            }
-            return false;
-
-        case MS_DR: // Moves the mosue down and to the right
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_TAP(X_MS_WH_DOWN)
-                    SS_TAP(X_MS_WH_RIGHT)
-                );
-            }
-            return false;
-
-        case MS_UL:
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_TAP(X_MS_WH_UP)
-                    SS_TAP(X_MS_WH_LEFT)
-                );
-            }
-            return false;
-
-        case MS_UR:
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_TAP(X_MS_WH_UP)
-                    SS_TAP(X_MS_WH_RIGHT)
-                );
-            }
-            return false;
     }
     return true; // Process all other keycodes normally.
 }
