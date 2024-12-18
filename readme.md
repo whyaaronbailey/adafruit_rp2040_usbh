@@ -25,6 +25,7 @@ After [setup your qmk envorinment](https://github.com/qmk/qmk_firmware/blob/mast
 ```
 git clone https://github.com/whyaaronbailey/adafruitrp2040_usbh.git _your_qmk_repo/keyboards/converter/adafruit_rp2040_usbh
 cd _your_qmk_repo/keyboards/converter/adafruit_rp2040_usbh
+git submodule update --init --recursive
 cd ../../..
 make converter/adafruit_rp2040_usbh:_your_choice:uf2 
 ```
