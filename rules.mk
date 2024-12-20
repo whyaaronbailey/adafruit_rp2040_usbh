@@ -2,7 +2,6 @@ SRC += matrix.c c1_main.c c1_usbh.c tusb_os_custom.c
 CUSTOM_MATRIX = lite
 POINTING_DEVICE_DRIVER = custom
 
-OPT_DEFS += -DCRT0_EXTRA_CORES_NUMBER=1
 
 SRC += lib/Pico-PIO-USB/src/pio_usb.c
 SRC += lib/Pico-PIO-USB/src/pio_usb_host.c
@@ -27,8 +26,7 @@ VPATH += lib/pico-sdk/src/common/pico_time/include
 VPATH += lib/pico-sdk/src/common/pico_sync/include
 VPATH += lib/pico-sdk/src/common/pico_util/include
 
-# KEY_OVERRIDE_ENABLE = yes
-# COMBO_ENABLE = yes
-# TAP_DANCE_ENABLE = no
-# LEADER_ENABLE = yes
-# OS_DETECTION_ENABLE = yes
+MCU = RP2040
+PLATFORM = chibios
+
+
