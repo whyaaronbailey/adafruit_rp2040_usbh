@@ -8,9 +8,11 @@ This is for QMK 0.24. I have not updated it for newer builds. However, raghur's 
 
 ## Available keymaps
 
+A new custom layout for the Tartarus V2 has been developed.
+
 This distribution is generic, and includes layouts and generic keymaps for :
-* Generic ANSI 104 layout under `keymaps/ansi`
-* Razer Tartarus V2 under `keymaps/tartarus`
+* Generic Full Size ANSI 104 layout under `keymaps/fullsize_ansi`
+* Razer Tartarus V2 under `keymaps/tartarus2`
 
 ## How to use this repository
 
@@ -34,5 +36,5 @@ where `_your_choice` can be `ansi` for generic 104-key ANSI keyboard and `tartar
 
 
 ## TODO:
-* Custom Tartarus info.json
+* Scroll wheel and scroll click customization (need to implement additional interfaces)
 * LED light control
