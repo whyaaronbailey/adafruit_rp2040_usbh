@@ -50,8 +50,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             /*│    SW      │    SC      │    THUMB   │     20     │*/
                   SCROLLUP,   SCROLLDOWN,   MO(1),      DICTATE,      
             /*├────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    LEFT    │    UP      │    RIGHT   │    DOWN   │ */
-                  KC_MS_LEFT, KC_MS_UP,   KC_MS_RIGHT,   KC_MS_DOWN
+            /*│    LEFT    │    RIGHT        UP      │    DOWN   │ */
+                KC_MS_LEFT, KC_MS_RIGHT,   KC_MS_UP,   KC_MS_DOWN
             /*└────────────┴────────────┴────────────┴────────────┘*/
     ),
     
@@ -61,10 +61,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                   KC_H,        KC_TRNS,     KC_TRNS,     KC_TRNS,   INTERZOOM,      
             /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
             /*│    06      │    07      │    08      │    09      │    10      │*/  
-                  KC_P,  WL_HARDWARE, KC_MS_WH_UP,  WL_STROKE,    ELLIPSE,       
+                  KC_P,     WL_HARDWARE, KC_MS_WH_UP,  WL_STROKE,    ELLIPSE,       
             /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
             /*│    11      │    12      │    13      │    14      │    15      │*/ 
-                  KC_R,     KC_TRNS,  KC_MS_WH_DOWN, FAST_DOWN,     ROI, 
+                  KC_R,     KC_MS_WH_UP, KC_MS_WH_DOWN, KC_MS_WH_DOWN,     ROI, 
             /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/  
             /*│    16      │    17      │    18      │    19      │*/ 
                OPENMCKESSON,   KC_TRNS,     KC_TRNS,     KC_TRNS,    
