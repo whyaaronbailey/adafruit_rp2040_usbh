@@ -1,38 +1,31 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 #include QMK_KEYBOARD_H
+#include "quantum.h"
 
 enum custom_keycodes {
-	COPYACC = SAFE_RANGE,
-	OPENGE,
-	OPENEPIC,
+    COPYACC = SAFE_RANGE,
+    OPENGE,
+    OPENEPIC,
     OPENMCKESSON,
-	PASTE,
-	DICTATE,
-	WL_SOFT,
-	WL_BONE,
-	WL_BRAIN,
-	WL_STROKE,
-	WL_LUNG,
-	WL_VASCULAR,
+    DICTATE,
+    WL_SOFT,
+    WL_BONE,
+    WL_BRAIN,
+    WL_STROKE,
+    WL_LUNG,
+    WL_VASCULAR,
     WL_SUBDURAL,
-	WL_HARDWARE,
-	ARROW,
-	ZOOM,
-	MEASURE,
-	SCROLLUP,
-	SCROLLDOWN,
-	WHEELUP,
-	WHEELDOWN,
-	SPINE_C,
-	SPINE_T,
-	SPINE_L,
-	NEXTFIELD,
-	DELETE,
-	ANNOTATION,
-	PREVFIELD,
-	FAST_UP,
-	FAST_DOWN,
-	SIGNREPORT,
+    WL_HARDWARE,
+    ARROW,
+    ZOOM,
+    MEASURE,
+    SCROLLUP,
+    SCROLLDOWN,
+    SPINE_C,
+    SPINE_T,
+    SPINE_L,
+    ANNOTATION,
+    FAST_UP,
+    FAST_DOWN,
     ELLIPSE,
     ROI,
     INTERZOOM,
@@ -58,20 +51,20 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                   SCROLLUP,   SCROLLDOWN,   MO(1),      DICTATE,      
             /*├────────────┼────────────┼────────────┼────────────┼*/  
             /*│    LEFT    │    UP      │    RIGHT   │    DOWN   │ */
-                  KC_LEFT,      KC_UP,      KC_RGHT,   KC_DOWN
+                  KC_MS_LEFT, KC_MS_UP,   KC_MS_RIGHT,   KC_MS_DOWN
             /*└────────────┴────────────┴────────────┴────────────┘*/
     ),
     
     [1] = LAYOUT_tartarus2(
             /*┌────────────┬────────────┬────────────┬────────────┬────────────┬ */
             /*│    01      │    02      │    03      │    04      │    05      │ */
-                  KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,   INTERZOOM,      
+                  KC_H,        KC_TRNS,     KC_TRNS,     KC_TRNS,   INTERZOOM,      
             /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
             /*│    06      │    07      │    08      │    09      │    10      │*/  
-                  KC_TRNS,  WL_HARDWARE, KC_MS_WH_UP,  WL_STROKE,    ELLIPSE,       
+                  KC_P,  WL_HARDWARE, KC_MS_WH_UP,  WL_STROKE,    ELLIPSE,       
             /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
             /*│    11      │    12      │    13      │    14      │    15      │*/ 
-                  KC_TRNS,     KC_TRNS,  KC_MS_WH_DOWN, FAST_DOWN,     ROI, 
+                  KC_R,     KC_TRNS,  KC_MS_WH_DOWN, FAST_DOWN,     ROI, 
             /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/  
             /*│    16      │    17      │    18      │    19      │*/ 
                OPENMCKESSON,   KC_TRNS,     KC_TRNS,     KC_TRNS,    
@@ -86,10 +79,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 };
 
-static uint16_t REP_DELAY = 290; // Common delay for both scroll up and down
-static uint16_t REP_DELAY_FAST = 130; // Common delay for both scroll up and down
+static uint16_t REP_DELAY = 300; 
+static uint16_t REP_DELAY_FAST = 140; 
 
-uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
+static uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
     bool is_up = (bool)cb_arg;
     if (is_up) {
         tap_code(KC_MS_WH_UP);
@@ -99,7 +92,7 @@ uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
     return REP_DELAY;
 };
 
-uint32_t wh_callback_fast(uint32_t trigger_time, void* cb_arg) {
+static uint32_t wh_callback_fast(uint32_t trigger_time, void* cb_arg) {
     bool is_up = (bool)cb_arg;
     if (is_up) {
         tap_code(KC_MS_WH_UP);
@@ -115,7 +108,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     switch (keycode) {
 
-		case DICTATE: // Pastes the accession number in EPIC SEND_STRING(SS_TAP(X_F13));
+		case DICTATE: 
 			if (record->event.pressed) {
 				SEND_STRING(SS_TAP(X_F13));
 			}
@@ -169,7 +162,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
-        case COPYACC:  // Copies the accession number to the clipboard
+        case COPYACC: 
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LSFT("`")
@@ -185,7 +178,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
-        case OPENGE: // Pastes the accession number in GE PACs
+        case OPENGE: 
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LSFT(SS_TAP(X_TAB))
@@ -199,7 +192,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
-        case OPENEPIC: // Pastes the accession number in EPIC
+        case OPENEPIC: 
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LCTL("2")
@@ -213,7 +206,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
-        case OPENMCKESSON: // Pastes the accession number in GE PACs
+        case OPENMCKESSON: 
             if (record->event.pressed) {
                 SEND_STRING(
                     SS_LCTL("f")
@@ -223,14 +216,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     SS_TAP(X_ENTER)
                     SS_DELAY(500)
                     SS_TAP(X_ENTER)
-                );
-            }
-            return false;
-
-        case PASTE: // Pastes the accession number in EPIC
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_LCTL("v")
                 );
             }
             return false;
@@ -425,14 +410,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			}
 		return false;
 
-		case DELETE:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_F15)
-				);
-			}
-		return false;
-
     }
-    return true; // Process all other keycodes normally.
+    return true; 
 }

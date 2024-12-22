@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "tusb_common.h": "c",
+        "usb_descriptors.h": "c"
+    }
+}
