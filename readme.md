@@ -8,19 +8,24 @@ This is for QMK 0.24. I have not updated it for newer builds. However, raghur's 
 
 ## Available keymaps
 
+A new custom layout for the Tartarus V2 has been developed.
+
 This distribution is generic, and includes layouts and generic keymaps for :
-* Generic ANSI 104 layout under `keymaps/ansi`
-* Razer Tartarus V2 under `keymaps/tartarus`
+* Generic Full Size ANSI 104 layout under `keymaps/default`
+* Razer Tartarus V2 under `keymaps/tartarus2`
 
 ## How to use this repository
 
-Download Git 0.24! or 
+Install using the normal guide: [setup your qmk envorinment](https://github.com/qmk/qmk_firmware/blob/master/docs/newbs_getting_started.md). This will install the latest version of QMK. 
+
+Then run the following:
 ```
 git checkout 0.24.0 -b qmk-0.24.0
 git submodule update --init --recursive
 ```
+This will install QMK 0.24. This is a requisite step. Don't skip it.
 
-After [setup your qmk envorinment](https://github.com/qmk/qmk_firmware/blob/master/docs/newbs_getting_started.md), clone this repository to `keyboards/converter` then run
+After clone this repository to `keyboards/converter` then run
 
 ```
 git clone https://github.com/whyaaronbailey/adafruitrp2040_usbh.git _your_qmk_repo/keyboards/converter/adafruit_rp2040_usbh
@@ -30,9 +35,10 @@ cd ../../..
 make converter/adafruit_rp2040_usbh:_your_choice:uf2 
 ```
 
-where `_your_choice` can be `ansi` for generic 104-key ANSI keyboard and `tartarus` for the Razer Tartarus V2
+where `_your_choice` can be `default` for generic 104-key Fullsize ANSI keyboard and `tartarus2` for the Razer Tartarus V2. If you want to use my PACs distribution, use `taratus2_pacs`.
 
 
 ## TODO:
-* Custom Tartarus info.json
+* Improve documentation
+* Scroll wheel and scroll click customization (need to implement additional interfaces)
 * LED light control
