@@ -198,9 +198,8 @@ split, and `.notes/` containing the PowerMic II technical specification, a custo
 | `keyboards/handwired/orbweaver` | Stock QMK. IS31FL3731 reference for P2. Keep. |
 | `keyboards/converter/qmk_AdaFruitRp2040USBH_gongyi` | Upstream GongYiLiao original (keymaps `ansi`, `ka500`, `pok3r`). Ancestor, no git. |
 | `E:\qmk_firmware - Copy\` | Archive of ~30 dead-end experiments (`_claude`…`_claude6`, `_perplexity2/3`, `_chatgpt`, `_google`, `_tinyusb`, `_raghur`, `_OG`). Contains `_t2_led`, relevant to P2. |
-| `E:\temp adafruit\` | Clean Dec 2024 snapshot, one commit behind old `main`. Redundant. |
-| `E:\orbweaver.zip` | Byte-identical to `handwired/orbweaver`. Redundant. |
-| `C:\keyboards\converter\adafruit_rp2040_usbh_via` | Two-file scratch fragment of P3, earlier same-day version. |
+| `E:\qmk-archive-2026-08-08\` | Verified duplicates, moved out 2026-08-08: the old `E:\temp adafruit` snapshot, `orbweaver.zip`, a stray nested `matrix.c`, and a two-file P3 fragment from `C:\keyboards`. See the README in there. Delete when satisfied. |
+| `E:\qmk-personal-notes-removed\` | Unraid/NordVPN notes that had been sitting in P2's `notes/` folder. **Live credentials — rotate, then delete.** |
 
 ---
 
