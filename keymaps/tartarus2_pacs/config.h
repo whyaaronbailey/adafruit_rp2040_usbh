@@ -15,11 +15,25 @@
 #define CRT0_EXTRA_CORES_NUMBER 1
 
 
-// PowerMic II emulation. 0 axes keeps the report buttons-only; 24 buttons
-// makes it exactly 3 bytes with no padding item, matching the captured
-// PowerMic report. Must stay >= 17 — Trigger is bit 16.
-#define JOYSTICK_AXIS_COUNT 0
-#define JOYSTICK_BUTTON_COUNT 24
+// PowerMic II emulation, shaped against the real 64-byte report descriptor
+// pulled from 2024-0420_powermic_only.pcapng frame 3613. See powermic.h for
+// the full byte listing. Its input report is laid out as:
+//
+//   8 bits  INPUT (Constant)      -> byte 0 is padding, NOT buttons
+//   14 bits INPUT (Data,Var,Abs)  -> Buttons 1..14 at bits 8..21
+//   2 bits  INPUT (Constant)      -> tail padding
+//
+// One 8-bit axis reproduces byte 0, so QMK's buttons then start at bit 8 just
+// like the device. That matters beyond byte layout: it makes Dictate HID
+// *Button 3* - the usage the real device reports, and the bit Nuance's
+// BTN_DICTATE 0x0004 names. Starting buttons at bit 0 produced identical wire
+// bytes but numbered every button 8 higher, which a usage-based reader
+// (HidP_GetUsages, or the PowerMic COM SDK) would read wrong.
+//
+// 14 % 8 != 0, so QMK appends the 2-bit constant tail on its own.
+#define JOYSTICK_AXIS_COUNT 1
+#define JOYSTICK_AXIS_RESOLUTION 8
+#define JOYSTICK_BUTTON_COUNT 14
 
 #define MOUSEKEY_INTERVAL 16
 #define MOUSEKEY_DELAY 0
