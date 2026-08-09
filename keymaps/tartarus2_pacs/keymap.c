@@ -1,5 +1,6 @@
 #include QMK_KEYBOARD_H
 #include "quantum.h"
+#include "powermic.h"
 
 enum custom_keycodes {
     COPYACC = SAFE_RANGE,
@@ -108,9 +109,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     switch (keycode) {
 
-		case DICTATE: 
+		case DICTATE:
+			// Was SS_TAP(X_F13): a keyboard scan code, so it only reached
+			// PowerScribe when PowerScribe had focus, which is what forced the
+			// AHK WinActivate helper. Now emits the PowerMic's own Button-page
+			// report instead, which Raw Input delivers regardless of focus.
 			if (record->event.pressed) {
-				SEND_STRING(SS_TAP(X_F13));
+				powermic_button_press(PM_DICTATE);
+			} else {
+				powermic_button_release(PM_DICTATE);
 			}
 		return false;
 
