@@ -4,13 +4,18 @@
 
 Everything here descends from the published repo
 [`whyaaronbailey/adafruit_rp2040_usbh`](https://github.com/whyaaronbailey/adafruit_rp2040_usbh).
-Over 2024–2026 five *different* projects grew out of it. Historically each one was
-started by **copying the directory** rather than branching, which is why the disk
+Over 2024–2026 six *different* projects grew out of it (P1–P6). Historically each one
+was started by **copying the directory** rather than branching, which is why the disk
 ended up with a dozen near-identical trees and no record of what diverged or why.
 
 As of 2026-08-08 every project is committed to its own branch. The directories stay
 separate (they're genuinely separate QMK keyboard definitions with their own
 `KEYBOARD_PATH`), but each directory now tracks one named branch.
+
+**Quick index:** P1 Tartarus converter (shipping) · P2 Tartarus LEDs (stalled) ·
+P3 VIA visual map (stalled) · P4 Kensington dual-trackball (active) ·
+P5 PowerMic emulation (dead end) · **P6 PowerMic over QMK's HID stack (works, unflashed)**.
+P6 supersedes P5 and is the one to build on for the dictation-trigger goal.
 
 ---
 
@@ -174,20 +179,119 @@ Two real bug fixes live here and are worth porting back to P1:
 
 ---
 
-## P5 · PowerMic II emulation — STALLED
+## P5 · PowerMic II emulation (old attempt) — SUPERSEDED BY P6
 
 | | |
 |---|---|
 | Directory | `keyboards/converter/adafruit_rp2040_usbh_pm` |
 | Branch | `p5-powermic` (`e027579`) |
-| Status | Incomplete |
+| Status | Dead end. Kept for its notes; the working approach is P6. |
 
-Emulating the Nuance PowerMic II dictation handset's buttons — the other half of the
-PACS workflow alongside P4.
+The first attempt at emulating the Nuance PowerMic II dictation handset's buttons —
+the other half of the PACS workflow alongside P4.
 
 Key files: `keymaps/powermic/` behind a `POWERMIC_ENABLE` flag, a `core0/` / `core1/`
 split, and `.notes/` containing the PowerMic II technical specification, a custom
 `usb_descriptors.c`, and `powermic.c` / `.h`.
+
+**Why it could never work (diagnosed 2026-08-08).** It called TinyUSB's *device*
+API (`tud_hid_n_report`) and enabled `CFG_TUD_ENABLED` + compiled in `dcd_rp2040.c`.
+But this firmware runs TinyUSB in **host mode only** — the device side (what the PC
+sees) is **ChibiOS USB** via QMK. That put two USB device stacks on one RP2040
+peripheral. On top of that, `POWERMIC_INTERFACE` was 3 while `CFG_TUD_HID` was 1
+(only instance 0 exists), the report struct was 2 bytes not 3, and `powermic.c` was
+never even added to `rules.mk`'s `SRC`. Four independent blockers. This is the
+"we never got QMK to emit that code" from the notes.
+
+Its `.notes/` are still the best written record of the goal and the captured button
+codes — read them, but build on P6.
+
+---
+
+## P6 · PowerMic II over QMK's own HID stack — WORKS (unflashed)
+
+| | |
+|---|---|
+| Directory | `keyboards/converter/adafruit_rp2040_usbh` (keymap `tartarus2_pacs`) |
+| Branch | `p6-powermic-hid` (from P1) |
+| Status | Builds clean, descriptor verified byte-exact. **Not yet flashed.** |
+
+The approach that actually works: instead of a second USB stack, carry the PowerMic's
+3-byte Button-page report over **QMK's joystick HID interface** as a transport. QMK on
+ChibiOS already enumerates it alongside the keyboard, so the Tartarus keeps working and
+the PowerMic report is just one more interface.
+
+**The daily-driver keyboard is untouched** — this branch only replaces what the
+`DICTATE` key emits. It used to send `SS_TAP(X_F13)` (a keyboard scan code, hence
+focus-gated, hence the AHK dependency); it now emits the PowerMic's own button report,
+which Raw Input delivers off-focus.
+
+Files added to `keymaps/tartarus2_pacs/`:
+- `powermic.c` / `powermic.h` — the button enum and press/release, with the full
+  captured descriptor documented in the header
+- edits to `config.h` (`JOYSTICK_AXIS_COUNT 1`, `JOYSTICK_AXIS_RESOLUTION 8`,
+  `JOYSTICK_BUTTON_COUNT 14`), `rules.mk` (`JOYSTICK_ENABLE`, `JOYSTICK_OWN_EP`,
+  `MOUSE_SHARED_EP = no`), and `keymap.c` (the `DICTATE` case)
+
+Depends on a one-line core opt-out: **`JOYSTICK_OWN_EP`** in
+`tmk_core/protocol.mk` (committed on `qmk-0.24.0` as `e15dbc1002`). Without it, QMK
+folds the joystick into the shared endpoint behind a REPORT_ID and the raw bytes never
+reach the wire. `MOUSE_SHARED_EP = no` is also required — otherwise `SharedReport[]`
+opens at the mouse block and a standalone `JoystickReport[]` won't compile.
+
+**Report layout, matched to the real device:** byte 0 is a constant padding byte (an
+8-bit axis reproduces it), Buttons 1–14 sit at bits 8–21, then 2 bits of tail padding.
+So Dictate is HID **Button 3** on the wire *and* by usage — the same as the real
+handset. Verified against the linked ELF.
+
+**Every button verified** against real per-button USBPcap captures (see References):
+all 10 enum codes match byte-for-byte, and `rear` = `01 00 00` confirms Trigger lives
+in byte 0 (the scanner — correctly excluded from the button enum).
+
+**Open question — only hardware answers it:** does PowerScribe react? The descriptor
+still differs from a real PowerMic in top-level Usage (`0x04` Joystick vs `0x00`
+Undefined), an extra Physical collection, an 8-bit LED OUTPUT report, and a 39-byte
+vendor FEATURE report. The **feature-handshake risk is retired** — bus captures show
+the host never reads that feature report (only `SET_IDLE`). The remaining unknown is
+whether PowerScribe pins to the PowerMic VID/PID. To test: open PowerScribe, move focus
+to another window, press Tartarus key 20.
+
+```bash
+qmk compile -kb converter/adafruit_rp2040_usbh -km tartarus2_pacs
+# revert to the plain daily driver at any time:
+git -C keyboards/converter/adafruit_rp2040_usbh checkout p1-tartarus-converter
+```
+
+---
+
+## Reference assets (PowerMic / PowerScribe) — scattered across drives
+
+These are the source-of-truth files for the P6 work. They live on removable/portable
+drives, so **drive letters may differ when a drive is remounted** — the Envoy Pro was
+`J:` and the DUOLINK32 flash drive was `G:` on 2026-08-08.
+
+| Asset | Location (2026-08-08) | What it is |
+|---|---|---|
+| **Real per-button captures** | `J:\Projects\HID Remapper\hidremapper\*.pcapng` + `*.txt` | USBPcap traces of the genuine PowerMic (VID `0x0554` PID `0x1001`). `2024-0420_powermic_only.pcapng` frame 3613 = the 64-byte report descriptor. Per-button files (`Button Transcribe`, `record`, `ffwd`, `custom_left.txt`, `enter_select.txt`, …) each capture one button. This is what P6's mapping was verified against. **The most valuable asset — do not lose this folder.** |
+| Full session capture | `D:\full_powerscribe_powermic.txt` | 33 MB Wireshark text export, PowerMic + PowerScribe. Tree-only (no raw descriptor bytes), so the `.pcapng` above is better, but this has the button-timing analysis. Also `D:\Downloads\1PowerMic_Capture_Analysis.txt`. |
+| Nuance SDK reference | `J:\Projects\HID Remapper\Nuance PowerMic API_unlocked.pdf` (copy also in `H:\Projects\Powerscribe Documentation\`) | The `PMII_MICBUTTONS` table (p.39). Its 16-bit mask is the button-*number* bitmap — `BTN_DICTATE 0x0004` = Button 3. Confirms the capture. |
+| Wireshark/tshark | `J:\PortableApps\WiresharkPortable64\App\Wireshark\tshark.exe` | On the same drive as the captures — use it to re-parse the `.pcapng`s. |
+| API Monitor | `J:\Downloads\api-monitor-v2r13-x86-x64` | The tool to watch how `Nuance.PSOne.exe` binds its HID reader, if the VID/PID-pinning question ever needs a definitive answer. |
+| pm_probe rig | `H:\Projects\Shared with Claude\pm_probe\` | A throwaway device-mode Arduino HID probe (a VM session's work) to validate the report hypothesis on a spare board. Superseded by P6 but the experiment protocol in its README is sound. Its transcript cites a `C:\Projects\qmk_firmware\...\converter\converter\...` path that does not exist here — that's an isolated VM copy, not this tree. |
+| SpeechMike capture | `J:\Projects\HID Remapper\hidremapper\SpeechMike-device30.pcapng` | Device 30 (VID `0xdf04`) enumerates as a **plain boot mouse** — Philips routes its buttons through the SpeechControl driver, not readable HID. Not a useful PowerMic comparison. (This capture also contains a second real PowerMic at device 29.) |
+
+**radhub** (`H:\Projects\radhub*`, and on `G:`) is the *other* half of the PACS story:
+a DLL-injection interface into PowerScribe, developed in a separate Claude session. It
+is a **discovery/runtime tool, not a dependency of this firmware.** The `KSHAH`/`KSJAJ`
+`*.pcapng.gz` files next to pm_probe are radhub **network** captures, not USB.
+
+## Earlier, pre-QMK history
+
+Before any of the QMK work, PowerMic emulation was attempted in AutoHotkey:
+`C:\Users\Kamran\OneDrive\Desktop\USB\` (Dec 2023) — `powermic_control.ahk`/`.exe` in
+~15 copies, plus `Nuance PowerScribe360 Integration Component (x64)` with
+`Nuance.SectraCOM.tlb`. This is the ancestor of the whole PACS-input effort; kept for
+history, not active.
 
 ---
 
@@ -209,3 +313,8 @@ split, and `.notes/` containing the PowerMic II technical specification, a custo
 2. Never commit `github_persona_access_token.txt`. It's in `.git/info/exclude`; move it out of the repo tree and rotate it.
 3. `.claude/` is gitignored — it holds machine-local paths.
 4. The `-dirty` marker on `lib/tinyusb` is a harmless Windows symlink typechange in two docs files. Don't commit it.
+5. The P6 core change lives in a **different repo** than the keyboard: `tmk_core/protocol.mk`
+   on branch `qmk-0.24.0` (commit `e15dbc1002`). If that outer tree is ever reset or
+   re-cloned, P6 fails to build with a confusing `SharedReport` error — re-apply `JOYSTICK_OWN_EP`.
+6. The PowerMic captures and `tshark` are on the **Envoy Pro** portable drive (`J:` when
+   mounted). If it's not plugged in, the References table above still records what's where.
