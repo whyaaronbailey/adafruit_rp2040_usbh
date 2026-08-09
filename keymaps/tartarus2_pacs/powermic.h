@@ -26,21 +26,34 @@
 
 #include <stdint.h>
 
-// Bit positions from the USB capture recorded in
-// keyboards/converter/adafruit_rp2040_usbh_pm/.notes/requirements.txt (L121-133).
-// The comment on each line is the original captured 24-bit code.
+// Bit positions taken from the real USBPcap capture of the device
+// (D:\full_powerscribe_powermic.txt, idVendor 0x0554 "Dictaphone Corp.",
+// interface 3, HID, 64-byte report descriptor, EP 0x81, bInterval 10ms).
+//
+// Wireshark prints "HID Data" as bytes in transmission order, so a captured
+// value of 010000 means byte0 = 0x01 -- NOT a big-endian 24-bit integer. The
+// 24-bit "codes" in .notes/requirements.txt read the other way round, which
+// puts Trigger, Enter/Select and Custom Right in the wrong places.
+//
+// Cross-checked against Nuance's own PMII_MICBUTTONS table
+// (Powerscribe Documentation/Nuance PowerMic API_unlocked.pdf p.39), whose
+// 16-bit mask equals byte1 | (byte2 << 8). All nine documented buttons agree.
+// Trigger sits in byte0, outside that mask, because it belongs to the
+// scanner -- a separate device in Nuance's object model.
+//
+// Index below is the QMK joystick button index, which equals byte * 8 + bit.
 enum powermic_button {
-    PM_ENTER_SELECT = 0,  // 0x000001
-    PM_CUSTOM_RIGHT = 1,  // 0x000002
-    PM_TRANSCRIBE   = 8,  // 0x000100
-    PM_TAB_BACK     = 9,  // 0x000200
-    PM_DICTATE      = 10, // 0x000400
-    PM_TAB_FORWARD  = 11, // 0x000800
-    PM_REWIND       = 12, // 0x001000
-    PM_FFWD         = 13, // 0x002000
-    PM_STOP_PLAY    = 14, // 0x004000
-    PM_CUSTOM_LEFT  = 15, // 0x008000
-    PM_TRIGGER      = 16, // 0x010000
+    PM_TRIGGER      = 0,  // byte0 bit0 -- wire 01 00 00 (scanner)
+    PM_TRANSCRIBE   = 8,  // byte1 bit0 -- wire 00 01 00 -- SDK 0x0001
+    PM_TAB_BACK     = 9,  // byte1 bit1 -- wire 00 02 00 -- SDK 0x0002
+    PM_DICTATE      = 10, // byte1 bit2 -- wire 00 04 00 -- SDK 0x0004
+    PM_TAB_FORWARD  = 11, // byte1 bit3 -- wire 00 08 00 -- SDK 0x0008
+    PM_REWIND       = 12, // byte1 bit4 -- wire 00 10 00 -- SDK 0x0010
+    PM_FFWD         = 13, // byte1 bit5 -- wire 00 20 00 -- SDK 0x0020
+    PM_STOP_PLAY    = 14, // byte1 bit6 -- wire 00 40 00 -- SDK 0x0040
+    PM_CUSTOM_LEFT  = 15, // byte1 bit7 -- wire 00 80 00 -- SDK 0x0080
+    PM_ENTER_SELECT = 16, // byte2 bit0 -- wire 00 00 01 -- SDK 0x0100
+    PM_CUSTOM_RIGHT = 17, // byte2 bit1 -- wire 00 00 02
 };
 
 // Mirror a physical PowerMic button. Press on key-down, release on key-up,
