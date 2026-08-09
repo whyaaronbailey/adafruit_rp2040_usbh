@@ -2,6 +2,56 @@
 #include "quantum.h"
 #include "powermic.h"
 
+// --- Tartarus V2 RGB via the OpenRazer protocol -----------------------------
+// Proof-of-concept: turn the whole keyboard a solid colour by sending the
+// device the same 90-byte vendor FEATURE report Razer Synapse would. Command
+// decoded from notes/openrazer/ (razerkbd_driver.c + razerchromacommon.c):
+//   extended-matrix "static" effect, transaction_id 0x1F (the Tartarus V2 tag),
+//   command_class 0x0F, command_id 0x02, args = VARSTORE, BACKLIGHT_LED, STATIC,
+//   then the RGB triple. CRC is XOR of report bytes [2..87].
+// Sent via tartarus_send_feature_report() (matrix.c), the host-side path that
+// already works for the keyboard lock LEDs. Async, so retry until it queues.
+
+static bool    razer_led_pending = false;
+static uint8_t razer_r, razer_g, razer_b;
+
+static uint8_t razer_crc(const uint8_t *r) {
+    uint8_t crc = 0;
+    for (int i = 2; i < 88; i++) {
+        crc ^= r[i];
+    }
+    return crc;
+}
+
+static void tartarus_request_color(uint8_t r, uint8_t g, uint8_t b) {
+    razer_r = r; razer_g = g; razer_b = b;
+    razer_led_pending = true;
+}
+
+void housekeeping_task_user(void) {
+    if (!razer_led_pending) {
+        return;
+    }
+
+    uint8_t report[90] = {0};
+    report[1]  = 0x1F;    // transaction_id: Tartarus V2
+    report[5]  = 0x09;    // data_size
+    report[6]  = 0x0F;    // command_class: extended matrix
+    report[7]  = 0x02;    // command_id: set effect
+    report[8]  = 0x01;    // arg0: VARSTORE
+    report[9]  = 0x05;    // arg1: BACKLIGHT_LED
+    report[10] = 0x01;    // arg2: effect id = STATIC
+    report[13] = 0x01;    // arg5: effect_static writes 0x01 here
+    report[14] = razer_r; // arg6: R
+    report[15] = razer_g; // arg7: G
+    report[16] = razer_b; // arg8: B
+    report[88] = razer_crc(report);
+
+    if (tartarus_send_feature_report(report, sizeof(report))) {
+        razer_led_pending = false;
+    }
+}
+
 enum custom_keycodes {
     COPYACC = SAFE_RANGE,
     OPENGE,
@@ -116,6 +166,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			// report instead, which Raw Input delivers regardless of focus.
 			if (record->event.pressed) {
 				powermic_button_press(PM_DICTATE);
+				tartarus_request_color(0xFF, 0x00, 0x00); // LED test: red on press
 			} else {
 				powermic_button_release(PM_DICTATE);
 			}

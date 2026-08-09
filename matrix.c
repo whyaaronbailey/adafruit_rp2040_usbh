@@ -96,6 +96,26 @@ static bool send_led_report(uint8_t* leds) {
     return false;
 }
 
+// Push a HID FEATURE report to the mounted keyboard. This is the same call the
+// lock-LED path uses, only with report type FEATURE (wValue high byte 0x03,
+// matching OpenRazer's SET_REPORT value 0x0300) and a caller-supplied length.
+// Gated to the Tartarus V2 so a stray 90-byte vendor report never reaches an
+// unrelated keyboard. Async like send_led_report: false means not queued —
+// the caller retries.
+bool tartarus_send_feature_report(const uint8_t *buf, uint16_t len) {
+    if (kbd_addr == 0) {
+        return false;
+    }
+
+    uint16_t vid = 0, pid = 0;
+    tuh_vid_pid_get(kbd_addr, &vid, &pid);
+    if (!(vid == 0x1532 && pid == 0x0244)) { // Razer Tartarus V2
+        return false;
+    }
+
+    return tuh_hid_set_report(kbd_addr, kbd_instance, 0, HID_REPORT_TYPE_FEATURE, (void*)buf, len);
+}
+
 static volatile bool set_protocol_complete = false;
 void                 tuh_hid_set_protocol_complete_cb(uint8_t dev_addr, uint8_t instance, uint8_t protocol) {
     set_protocol_complete = true;
