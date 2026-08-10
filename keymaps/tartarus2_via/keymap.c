@@ -233,8 +233,12 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
     return true;  // opcode was in our range; swallowed either way
 }
 
+// Custom keycodes start at QK_KB_0 so they line up with the customKeycodes
+// table in the VIA definition (VIA numbers CUSTOM(n) from QK_KB_0; SAFE_RANGE
+// is QK_USER_0 = QK_KB_0 + 64, which is why unnamed keys showed CUSTOM(64+)).
+// Keep this enum and the JSON "customKeycodes" array in the same order.
 enum custom_keycodes {
-    COPYACC = SAFE_RANGE,
+    COPYACC = QK_KB_0,
     OPENGE,
     OPENEPIC,
     OPENMCKESSON,
