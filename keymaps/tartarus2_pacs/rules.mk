@@ -18,8 +18,15 @@ JOYSTICK_OWN_EP = yes
 # The mouse keeps working; it just loses its REPORT_ID prefix and gains an EP.
 MOUSE_SHARED_EP = no
 SRC += powermic.c
+# Generalizable Razer Tartarus RGB driver (OpenRazer-derived, GPL-2.0).
+SRC += tartarus_rgb.c
 
 TAP_DANCE_ENABLE = no
 COMBO_ENABLE = NO
 NKRO_ENABLE = yes
 DEFERRED_EXEC_ENABLE = yes
+
+# RAW HID: the only host->firmware channel that works from the dev box (keyboard
+# injection is blocked there). Carries the reflash trigger and the Razer command
+# relay for bench-testing LED control.
+RAW_ENABLE = yes

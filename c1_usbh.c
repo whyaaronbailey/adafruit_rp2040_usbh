@@ -15,6 +15,8 @@
 void alarm_pool_add_repeating_timer_us(void) {}
 void alarm_pool_create(void) {}
 
+extern void busy_wait_us(uint64_t delay_us);
+
 // Initialize USB host stack on core1
 void c1_usbh(void) {
     pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
@@ -24,7 +26,7 @@ void c1_usbh(void) {
 
     gpio_init(PIN_VBUS); // Use correct VBUS enable pin
     gpio_set_dir(PIN_VBUS, GPIO_OUT);
-    gpio_put(PIN_VBUS, 1);
+    gpio_put(PIN_VBUS, 1); // Enable VBUS to the USB-A host port
 
     tuh_init(1);
     c1_start_timer();

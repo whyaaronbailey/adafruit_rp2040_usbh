@@ -96,24 +96,173 @@ static bool send_led_report(uint8_t* leds) {
     return false;
 }
 
-// Push a HID FEATURE report to the mounted keyboard. This is the same call the
-// lock-LED path uses, only with report type FEATURE (wValue high byte 0x03,
-// matching OpenRazer's SET_REPORT value 0x0300) and a caller-supplied length.
-// Gated to the Tartarus V2 so a stray 90-byte vendor report never reaches an
-// unrelated keyboard. Async like send_led_report: false means not queued —
-// the caller retries.
-bool tartarus_send_feature_report(const uint8_t *buf, uint16_t len) {
+// Push a HID FEATURE report to the mounted keyboard. Same call the lock-LED path
+// uses, only with report type FEATURE (wValue high byte 0x03, matching OpenRazer's
+// SET_REPORT value 0x0300) and a caller-supplied length. Gated to any Razer device
+// (VID 0x1532) so a stray 90-byte vendor report never reaches an unrelated keyboard.
+// Records diagnostics into tartarus_dbg_* because this build has no console.
+volatile int16_t tartarus_dbg_pid      = -1;
+volatile uint8_t tartarus_dbg_stage    = 0;
+volatile uint8_t tartarus_dbg_instance = 0xFF; // which HID instance we send to
+volatile uint8_t tartarus_dbg_icount   = 0;    // how many HID instances the device has
+volatile uint8_t razer_cb_fired        = 0;    // FEATURE set_report completion callback ran
+volatile uint16_t razer_cb_len         = 0;    // bytes the completed transfer reported
+
+// The TinyUSB HID instance index of the Razer control interface is NOT stable
+// across re-enumerations, so we can't hardcode it. Detect it at mount time as
+// the interface with the largest report descriptor (on Razer keyboards the
+// vendor/control interface is by far the most complex: e.g. Tartarus control
+// 186 bytes vs keyboard 61, mouse 94). LED commands target this instance.
+volatile uint8_t razer_led_instance = 0;
+static uint16_t  razer_led_desc_len = 0;
+
+// Per-instance report-descriptor length and interface protocol, captured at
+// mount. The Razer control interface is the one with the LARGEST descriptor
+// (~186 bytes) and interface protocol NONE (0). Exposed for host-side probing.
+volatile uint16_t razer_inst_desclen[8] = {0};
+volatile uint8_t  razer_inst_proto[8]   = {0};
+
+uint8_t tartarus_led_instance(void) {
+    return razer_led_instance;
+}
+
+// bInterfaceNumber of a given HID instance (0xFF if unavailable).
+uint8_t tartarus_inst_itfnum(uint8_t instance) {
     if (kbd_addr == 0) {
-        return false;
+        return 0xFF;
     }
+    tuh_itf_info_t info;
+    if (tuh_hid_itf_get_info(kbd_addr, instance, &info)) {
+        return info.desc.bInterfaceNumber;
+    }
+    return 0xFF;
+}
+
+// USB interface number (bInterfaceNumber / wIndex) of the Razer control
+// interface — the value to pass to tartarus_send_iface(). Empirically this is
+// the HIGHEST-numbered non-boot (interface protocol NONE) HID interface on the
+// Tartarus. Interface numbers are device-fixed, unlike HID instance indices.
+uint8_t tartarus_led_itfnum(void) {
+    if (kbd_addr == 0) {
+        return 0xFF;
+    }
+    uint8_t cnt  = tuh_hid_instance_count(kbd_addr);
+    uint8_t best = 0xFF;
+    for (uint8_t i = 0; i < cnt && i < 8; i++) {
+        if (razer_inst_proto[i] == 0) {  // HID_ITF_PROTOCOL_NONE = vendor/control
+            uint8_t itf = tartarus_inst_itfnum(i);
+            if (itf != 0xFF && (best == 0xFF || itf > best)) {
+                best = itf;
+            }
+        }
+    }
+    return best;
+}
+
+// Fires when a SET_REPORT control transfer completes. Filtered to FEATURE so it
+// reflects our Razer send, not the lock-LED (OUTPUT) path. Tells us the transfer
+// actually reached the device, not merely that it was queued.
+void tuh_hid_set_report_complete_cb(uint8_t dev_addr, uint8_t idx, uint8_t report_id, uint8_t report_type, uint16_t len) {
+    if (report_type == HID_REPORT_TYPE_FEATURE) {
+        razer_cb_fired = 1;
+        razer_cb_len   = len;
+    }
+}
+
+int tartarus_send_feature_report(const uint8_t *buf, uint16_t len) {
+    tartarus_dbg_stage = 0;
+    tartarus_dbg_pid   = -1;
+
+    if (kbd_addr == 0) {
+        return 0;
+    }
+    tartarus_dbg_stage |= 1;
+    tartarus_dbg_instance = kbd_instance;
+    tartarus_dbg_icount   = tuh_hid_instance_count(kbd_addr);
 
     uint16_t vid = 0, pid = 0;
     tuh_vid_pid_get(kbd_addr, &vid, &pid);
-    if (!(vid == 0x1532 && pid == 0x0244)) { // Razer Tartarus V2
-        return false;
+    tartarus_dbg_pid = (int16_t)pid;
+    if (vid == 0x1532) {
+        tartarus_dbg_stage |= 2;
+    }
+    if ((pid >> 8) == 0x02) {
+        tartarus_dbg_stage |= 4;
     }
 
-    return tuh_hid_set_report(kbd_addr, kbd_instance, 0, HID_REPORT_TYPE_FEATURE, (void*)buf, len);
+    if (vid != 0x1532) {
+        return 1;
+    }
+
+    bool ok = tuh_hid_set_report(kbd_addr, kbd_instance, 0, HID_REPORT_TYPE_FEATURE, (void*)buf, len);
+    if (ok) {
+        tartarus_dbg_stage |= 8;
+        return 3;
+    }
+    return 2;
+}
+
+uint8_t tartarus_instance_count(void) {
+    return (kbd_addr == 0) ? 0 : tuh_hid_instance_count(kbd_addr);
+}
+
+// Send a Razer SET_REPORT to an explicit USB *interface number* (wIndex),
+// replicating OpenRazer's razer_send_control_msg exactly: bmRequestType 0x21,
+// bRequest 0x09 (SET_REPORT), wValue 0x0300 (FEATURE, report id 0), wIndex =
+// interface number, 90-byte payload. This bypasses the HID-instance->interface
+// mapping so we can target the interface OpenRazer uses (Tartarus V2 = 0x01).
+static uint8_t rz_ctrl_buf[90];
+volatile uint16_t razer_cb_count = 0;  // completed vendor SET_REPORTs since boot
+static void rz_ctrl_complete(tuh_xfer_t *xfer) {
+    if (xfer->setup->bRequest == 0x09) {
+        razer_cb_fired = 1;
+        razer_cb_len   = (xfer->result == XFER_RESULT_SUCCESS) ? xfer->setup->wLength : 0;
+        razer_cb_count++;
+    }
+}
+int tartarus_send_iface(uint8_t itf_num, const uint8_t *buf, uint16_t len) {
+    if (kbd_addr == 0) {
+        return 0;
+    }
+    uint16_t vid = 0, pid = 0;
+    tuh_vid_pid_get(kbd_addr, &vid, &pid);
+    if (vid != 0x1532) {
+        return 1;
+    }
+    if (len > sizeof(rz_ctrl_buf)) {
+        len = sizeof(rz_ctrl_buf);
+    }
+    memcpy(rz_ctrl_buf, buf, len);
+
+    tusb_control_request_t const request = {
+        .bmRequestType_bit = {.recipient = TUSB_REQ_RCPT_INTERFACE, .type = TUSB_REQ_TYPE_CLASS, .direction = TUSB_DIR_OUT},
+        .bRequest = 0x09,
+        .wValue   = tu_htole16(0x0300),
+        .wIndex   = tu_htole16((uint16_t)itf_num),
+        .wLength  = len,
+    };
+    tuh_xfer_t xfer = {
+        .daddr       = kbd_addr,
+        .ep_addr     = 0,
+        .setup       = &request,
+        .buffer      = rz_ctrl_buf,
+        .complete_cb = rz_ctrl_complete,
+        .user_data   = 0,
+    };
+    return tuh_control_xfer(&xfer) ? 3 : 2;
+}
+
+// Send to an explicit HID instance rather than the auto-picked keyboard one.
+int tartarus_send_to(uint8_t instance, const uint8_t *buf, uint16_t len) {
+    if (kbd_addr == 0) {
+        return 0;
+    }
+    uint16_t vid = 0, pid = 0;
+    tuh_vid_pid_get(kbd_addr, &vid, &pid);
+    if (vid != 0x1532 || instance >= tuh_hid_instance_count(kbd_addr)) {
+        return 1;
+    }
+    return tuh_hid_set_report(kbd_addr, instance, 0, HID_REPORT_TYPE_FEATURE, (void*)buf, len) ? 3 : 2;
 }
 
 static volatile bool set_protocol_complete = false;
@@ -128,6 +277,10 @@ void tuh_mount_cb(uint8_t dev_addr) {
         led_count = timer_read();
     }
 
+    // Fresh device: re-detect the control interface as its HID interfaces mount.
+    razer_led_desc_len = 0;
+    razer_led_instance = 0;
+
     for (int instance = 0; instance < tuh_hid_instance_count(dev_addr); instance++) {
         uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
         if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
@@ -140,6 +293,21 @@ void tuh_mount_cb(uint8_t dev_addr) {
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
     dprintf("HID is mounted:%d:%d\n", dev_addr, instance);
     parse_report_descriptor((dev_addr * 16) + instance, desc_report, desc_len);
+
+    if (instance < 8) {
+        razer_inst_desclen[instance] = desc_len;
+        razer_inst_proto[instance]   = tuh_hid_interface_protocol(dev_addr, instance);
+    }
+
+    // Identify the Razer control interface as the one with the LARGEST report
+    // descriptor. On the Tartarus the vendor/control interface is by far the
+    // most complex (~186 bytes) vs keyboard (~61) and mouse (~94), and this is
+    // stable across re-enumerations. Track the running max as interfaces mount.
+    if (desc_len > razer_led_desc_len) {
+        razer_led_desc_len = desc_len;
+        razer_led_instance = instance;
+    }
+
     tuh_hid_receive_report(dev_addr, instance);
 }
 
