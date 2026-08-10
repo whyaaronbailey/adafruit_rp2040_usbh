@@ -33,7 +33,8 @@
     { "name": "ROI", "title": "ROI tool - runs M17 (default: layer 1 key 15)", "shortName": "ROI" },
     { "name": "McKesson", "title": "Open study in McKesson - runs M3 (default: layer 1 key 16)", "shortName": "MCK" },
     { "name": "Hang", "title": "Hanging protocol - runs M19 (unassigned by default)", "shortName": "HANG" },
-    { "name": "WL Subdural", "title": "Window/level subdural - runs M11 (unassigned by default)", "shortName": "SUBD" }
+    { "name": "WL Subdural", "title": "Window/level subdural - runs M11 (unassigned by default)", "shortName": "SUBD" },
+    { "name": "Dictate (AHK)", "title": "Sends Ctrl+F21 for AutoHotkey/PowerScribe and toggles the red dictate LEDs", "shortName": "DICT*" }
   ],
   "menus": [
     {

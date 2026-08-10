@@ -1,4 +1,4 @@
-﻿#include QMK_KEYBOARD_H
+#include QMK_KEYBOARD_H
 #include "quantum.h"
 #include "joystick.h"
 #include "powermic.h"
@@ -278,7 +278,8 @@ enum custom_keycodes {
     L15_ROI,            // M17
     L16_MCKESSON,       // M3
     KX_HANG,            // M19 (not on a key by default; assignable)
-    KX_WLSUBDURAL       // M11 (not on a key by default; assignable)
+    KX_WLSUBDURAL,       // M11 (not on a key by default; assignable)
+    DICT_AHK            // sends Ctrl+F21 for AHK/PowerScribe AND toggles dictate LEDs
 };
 
 // Macro slot for each runner key, indexed by (keycode - K01_ANNOT).
@@ -312,7 +313,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                 C(KC_F16),   C(KC_F17),   C(KC_F18),   C(KC_F19),
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    SW      â”‚    SC      â”‚    THUMB   â”‚     20     â”‚*/
-                  KC_TRNS,     KC_TRNS,     KC_LALT,   C(KC_F21),
+                  KC_TRNS,     KC_TRNS,     KC_LALT,    DICT_AHK,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    LEFT    â”‚    RIGHT        UP      â”‚    DOWN   â”‚ */
                 S(KC_F13),   S(KC_F14),   S(KC_F15),   S(KC_F16)
@@ -703,6 +704,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     switch (keycode) {
+
+        case DICT_AHK:
+            // AHK-model dictate: emit the production Ctrl+F21 (AutoHotkey activates
+            // PowerScribe and triggers dictation) while the firmware runs the same
+            // red LED toggle as the native DICTATE key.
+            if (record->event.pressed) {
+                tap_code16(C(KC_F21));
+                dictating = !dictating;
+            }
+            return false;
 
 		case DICTATE:
 			// Was SS_TAP(X_F13): a keyboard scan code, so it only reached
