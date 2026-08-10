@@ -53,6 +53,14 @@ static void led_set_idle_fx(uint8_t idx);  // defined with the LED state block b
 static uint32_t held_mask = 0;             // bit n = LED n's key is physically down
 static void led_force_reapply(void);       // resend current LED state to the device
 
+// Host-driven LED state (AHK model): scrolling logic lives in AutoHotkey, so
+// the firmware cannot infer it. The host mirrors its state via RAW HID opcodes
+// 0xC8 (dictate) / 0xC9 (scroll pulse); see tartarus_led.ahk.
+static bool     host_scroll = false;
+static bool     dictating;    // defined with an initializer in the LED block
+static uint8_t  scroll_led;   // defined with an initializer in the LED block
+static uint16_t scroll_half;  // defined with an initializer in the LED block
+
 // User-tunable colours (VIA "Lighting" menu writes these; HSV keeps VIA's
 // colour picker round-trippable, RGB is what the wire wants).
 static HSV     base_hsv   = {152, 255, 255};  // idle baseline: light blue
@@ -106,6 +114,25 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
                     held_mask &= ~(1UL << data[1]);
                 }
             }
+            break;
+
+        case 0xC8:  // host LED state: dictate [0xC8, on] -> all-red while on
+            dictating = data[1] != 0;
+            led_force_reapply();
+            break;
+
+        case 0xC9:  // host LED state: scroll pulse [0xC9, on, led, half_ms/10]
+            if (data[1]) {
+                host_scroll = true;
+                scroll_led  = (data[2] < TARTARUS_RGB_KEYS) ? data[2] : 0xFF;
+                if (data[3]) {
+                    scroll_half = data[3] * 10;
+                }
+            } else {
+                host_scroll = false;
+                scroll_led  = 0xFF;
+            }
+            led_force_reapply();
             break;
 
         case 0xD0: {  // probe: send driver-mode to instance data[1]; completion tracked async
@@ -453,7 +480,7 @@ static void led_set_idle_fx(uint8_t idx) {
 }
 
 static void led_render_frame(void) {
-    bool    scrolling = (token != INVALID_DEFERRED_TOKEN);
+    bool    scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     bool    pulse_red = scrolling && ((timer_read32() / scroll_half) & 1);
     uint8_t want[TARTARUS_RGB_KEYS][3];
     RGB     base   = hsv_to_rgb(base_hsv);
@@ -515,7 +542,7 @@ static void led_apply(void) {
     }
 
     // A native idle effect is selected: edge-triggered, scroll pulses whole pad.
-    bool        scrolling = (token != INVALID_DEFERRED_TOKEN);
+    bool        scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     led_state_t want      = scrolling ? LST_SCROLL : LST_IDLE;
     if (want == led_applied) {
         return;
