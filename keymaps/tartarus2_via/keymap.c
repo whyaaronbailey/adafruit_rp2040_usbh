@@ -249,7 +249,43 @@ enum custom_keycodes {
     FAST_UP,            // continuous scroll toggle (fast)
     FAST_DOWN,
     FX_NEXT,            // cycle idle LED effect forward
-    FX_PREV             // cycle idle LED effect back
+    FX_PREV,            // cycle idle LED effect back
+
+    // Named macro-runner keys: each simply plays its VIA dynamic macro, so the
+    // key shows a readable name ("01-Annotate") in the GUI while the behaviour
+    // stays editable in the Macros pane. Named after the DEFAULT position on
+    // the physical Tartarus caps (01..19, L = layer 1). Order must match the
+    // JSON customKeycodes array and pacs_macro_for[] below.
+    K01_ANNOT,          // M15
+    K02_WLSOFT,         // M4
+    K03_WLLUNG,         // M8
+    K04_WLVASC,         // M10
+    K05_ZOOM,           // M13
+    K06_EPIC,           // M2
+    K07_WLBONE,         // M5
+    K09_WLBRAIN,        // M6
+    K10_ARROW,          // M12
+    K11_COPYACC,        // M0
+    K15_MEASURE,        // M14
+    K16_GE,             // M1
+    K17_SPINEC,         // M20
+    K18_SPINET,         // M21
+    K19_SPINEL,         // M22
+    L05_INTERZOOM,      // M18
+    L07_WLHDWR,         // M9
+    L09_WLSTROKE,       // M7
+    L10_ELLIPSE,        // M16
+    L15_ROI,            // M17
+    L16_MCKESSON,       // M3
+    KX_HANG,            // M19 (not on a key by default; assignable)
+    KX_WLSUBDURAL       // M11 (not on a key by default; assignable)
+};
+
+// Macro slot for each runner key, indexed by (keycode - K01_ANNOT).
+static const uint8_t pacs_macro_for[] = {
+    15, 4, 8, 10, 13, 2, 5, 6, 12, 0, 14, 1, 20, 21, 22,  // K01..K19
+    18, 9, 7, 16, 17, 3,                                   // L05..L16
+    19, 11                                                 // hang, subdural
 };
 
 // Macro slot assignments (fixed; VIA shows these as M0..M22):
@@ -264,16 +300,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_tartarus2(
             /*â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬ */
             /*â”‚    01      â”‚    02      â”‚    03      â”‚    04      â”‚    05      â”‚ */
-                MC_15,        MC_4,        MC_8,        MC_10,       MC_13,
+                K01_ANNOT,   K02_WLSOFT,  K03_WLLUNG,  K04_WLVASC,  K05_ZOOM,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
             /*â”‚    06      â”‚    07      â”‚    08      â”‚    09      â”‚    10      â”‚*/  
-                MC_2,         MC_5,        SCROLLUP,    MC_6,        MC_12,
+                K06_EPIC,    K07_WLBONE,  SCROLLUP,   K09_WLBRAIN,  K10_ARROW,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
             /*â”‚    11      â”‚    12      â”‚    13      â”‚    14      â”‚    15      â”‚*/ 
-                MC_0,         FAST_UP,    SCROLLDOWN,  FAST_DOWN,   MC_14,
+               K11_COPYACC,   FAST_UP,    SCROLLDOWN,  FAST_DOWN,  K15_MEASURE,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    16      â”‚    17      â”‚    18      â”‚    19      â”‚*/ 
-                  MC_1,        MC_20,       MC_21,       MC_22,
+                  K16_GE,     K17_SPINEC,  K18_SPINET,  K19_SPINEL,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    SW      â”‚    SC      â”‚    THUMB   â”‚     20     â”‚*/
                   SCROLLUP,   SCROLLDOWN,   MO(1),      DICTATE,      
@@ -286,16 +322,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [1] = LAYOUT_tartarus2(
             /*â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬ */
             /*â”‚    01      â”‚    02      â”‚    03      â”‚    04      â”‚    05      â”‚ */
-                  KC_H,        KC_TRNS,     KC_TRNS,     KC_TRNS,     MC_18,
+                  KC_H,        KC_TRNS,     KC_TRNS,     KC_TRNS,  L05_INTERZOOM,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
             /*â”‚    06      â”‚    07      â”‚    08      â”‚    09      â”‚    10      â”‚*/  
-                  KC_P,        MC_9,      KC_MS_WH_UP,   MC_7,        MC_16,
+                  KC_P,      L07_WLHDWR, KC_MS_WH_UP, L09_WLSTROKE, L10_ELLIPSE,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
             /*â”‚    11      â”‚    12      â”‚    13      â”‚    14      â”‚    15      â”‚*/ 
-                  KC_R,     KC_MS_WH_UP, KC_MS_WH_DOWN, KC_MS_WH_DOWN,  MC_17,
+                  KC_R,     KC_MS_WH_UP, KC_MS_WH_DOWN, KC_MS_WH_DOWN, L15_ROI,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    16      â”‚    17      â”‚    18      â”‚    19      â”‚*/
-                  MC_3,        KC_TRNS,     FX_PREV,     FX_NEXT,
+               L16_MCKESSON,   KC_TRNS,     FX_PREV,     FX_NEXT,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    SW      â”‚    SC      â”‚    THUMB      â”‚    20   â”‚*/
                   KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,      
@@ -655,6 +691,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 held_mask &= ~(1UL << led);
             }
         }
+    }
+
+    // Named macro-runner keys: play the mapped VIA dynamic macro. The name is
+    // for the GUI; the behaviour is whatever the (editable) macro contains.
+    if (keycode >= K01_ANNOT && keycode <= KX_WLSUBDURAL) {
+        if (record->event.pressed) {
+            dynamic_keymap_macro_send(pacs_macro_for[keycode - K01_ANNOT]);
+        }
+        return false;
     }
 
     switch (keycode) {
