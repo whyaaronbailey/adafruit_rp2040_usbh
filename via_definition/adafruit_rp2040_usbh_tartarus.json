@@ -1,0 +1,80 @@
+{
+  "name": "Adafruit RP2040 USBH Converter (Razer Tartarus)",
+  "vendorId": "0x239A",
+  "productId": "0x0001",
+  "matrix": { "rows": 32, "cols": 8 },
+  "menus": [
+    {
+      "label": "Lighting",
+      "content": [
+        {
+          "label": "Tartarus LEDs",
+          "content": [
+            {
+              "label": "Idle Effect",
+              "type": "dropdown",
+              "options": [
+                ["Per-key reactive (blue/red)", 0],
+                ["Spectrum cycle", 1],
+                ["Rainbow wave", 2],
+                ["Color wheel", 3],
+                ["Breathing (blue)", 4],
+                ["Breathing (blue/purple)", 5],
+                ["Breathing (random)", 6],
+                ["Starlight (blue)", 7],
+                ["Starlight (blue/white)", 8],
+                ["Starlight (random)", 9],
+                ["Reactive (cyan flash)", 10]
+              ],
+              "content": ["id_trgb_idle_fx", 6, 1]
+            },
+            {
+              "label": "Idle Color",
+              "type": "color",
+              "content": ["id_trgb_base_color", 6, 2]
+            },
+            {
+              "label": "Dictate Color",
+              "type": "color",
+              "content": ["id_trgb_dict_color", 6, 3]
+            },
+            {
+              "label": "Pressed-key / Pulse Color",
+              "type": "color",
+              "content": ["id_trgb_scroll_color", 6, 4]
+            },
+            {
+              "label": "Brightness",
+              "type": "range",
+              "options": [0, 255],
+              "content": ["id_trgb_brightness", 6, 5]
+            },
+            {
+              "label": "Slow scroll interval (x10 ms)",
+              "type": "range",
+              "options": [10, 60],
+              "content": ["id_trgb_speed_slow", 6, 6]
+            },
+            {
+              "label": "Fast scroll interval (x10 ms)",
+              "type": "range",
+              "options": [8, 30],
+              "content": ["id_trgb_speed_fast", 6, 7]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "layouts": {
+    "keymap": [
+      ["3,6", "3,7", "4,0", "4,1", "4,2", { "x": 0.5 }, "28,2"],
+      ["5,3", "2,4", "3,2", "1,0", "2,5", { "x": 0.5 }, "13,1"],
+      ["7,1", "0,4", "2,6", "0,7", "1,1", { "x": 0.5 }, "13,0"],
+      ["28,1", "3,5", "3,3", "0,6", { "w": 2 }, "5,4"],
+      [{ "y": 0.5, "x": 1 }, "10,2"],
+      [{ "x": 0 }, "10,0", { "x": 1 }, "9,7"],
+      [{ "x": 1 }, "10,1"]
+    ]
+  }
+}
