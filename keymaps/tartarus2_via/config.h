@@ -14,6 +14,10 @@
 // dynamic keymap well inside the RP2040 wear-leveling EEPROM.
 #define DYNAMIC_KEYMAP_LAYER_COUNT 2
 
+// The PACS functions live in VIA dynamic macros (M0..M22) so they are
+// viewable and editable in the GUI. 24 slots: 23 seeded + 1 spare.
+#define DYNAMIC_KEYMAP_MACRO_COUNT 24
+
 #ifdef CRT0_EXTRA_CORES_NUMBER
 #undef CRT0_EXTRA_CORES_NUMBER
 #endif

@@ -1,4 +1,4 @@
-#include QMK_KEYBOARD_H
+﻿#include QMK_KEYBOARD_H
 #include "quantum.h"
 #include "joystick.h"
 #include "powermic.h"
@@ -6,6 +6,7 @@
 #include "via.h"
 #include "color.h"
 #include "c1.h"
+#include "dynamic_keymap.h"
 
 // --- Host-driven Tartarus control via RAW HID -------------------------------
 // Keyboard input/output injection is blocked from the dev box, so the only
@@ -234,85 +235,74 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
 }
 
 // Custom keycodes start at QK_KB_0 so they line up with the customKeycodes
-// table in the VIA definition (VIA numbers CUSTOM(n) from QK_KB_0; SAFE_RANGE
-// is QK_USER_0 = QK_KB_0 + 64, which is why unnamed keys showed CUSTOM(64+)).
-// Keep this enum and the JSON "customKeycodes" array in the same order.
+// table in the VIA definition (VIA numbers CUSTOM(n) from QK_KB_0). Keep this
+// enum and the JSON "customKeycodes" array in the same order.
+//
+// Only functions that need real firmware logic live here. Everything that was
+// a keystroke sequence (PACS tools, window/level, app-open macros) is a VIA
+// dynamic macro (M0..M22) â€” viewable and editable in the GUI's Macros pane â€”
+// seeded with the original sequences by macro_seed_defaults() below.
 enum custom_keycodes {
-    COPYACC = QK_KB_0,
-    OPENGE,
-    OPENEPIC,
-    OPENMCKESSON,
-    DICTATE,
-    WL_SOFT,
-    WL_BONE,
-    WL_BRAIN,
-    WL_STROKE,
-    WL_LUNG,
-    WL_VASCULAR,
-    WL_SUBDURAL,
-    WL_HARDWARE,
-    ARROW,
-    ZOOM,
-    MEASURE,
-    SCROLLUP,
+    DICTATE = QK_KB_0,  // PowerMic dictate + all-red LEDs
+    SCROLLUP,           // continuous scroll toggle (slow)
     SCROLLDOWN,
-    SPINE_C,
-    SPINE_T,
-    SPINE_L,
-    ANNOTATION,
-    FAST_UP,
+    FAST_UP,            // continuous scroll toggle (fast)
     FAST_DOWN,
-    ELLIPSE,
-    ROI,
-    INTERZOOM,
-    HANG,
-    FX_NEXT,   // cycle idle LED effect forward
-    FX_PREV    // cycle idle LED effect back
+    FX_NEXT,            // cycle idle LED effect forward
+    FX_PREV             // cycle idle LED effect back
 };
+
+// Macro slot assignments (fixed; VIA shows these as M0..M22):
+//  M0 CopyAccession  M1 OpenGE      M2 OpenEpic    M3 OpenMcKesson
+//  M4 W/L Soft(KP1)  M5 Bone(KP2)   M6 Brain(KP3)  M7 Stroke(KP4)
+//  M8 Lung(KP5)      M9 Hardware(KP6) M10 Vascular(KP7) M11 Subdural(KP8)
+//  M12 Arrow(a) M13 Zoom(z) M14 Measure(m) M15 Annotation(y)
+//  M16 Ellipse(e) M17 ROI(E) M18 Interzoom(Z) M19 Hang(h)
+//  M20 Spine C  M21 Spine T  M22 Spine L
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_tartarus2(
-            /*┌────────────┬────────────┬────────────┬────────────┬────────────┬ */
-            /*│    01      │    02      │    03      │    04      │    05      │ */
-                ANNOTATION,   WL_SOFT,     WL_LUNG,   WL_VASCULAR,    ZOOM,      
-            /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
-            /*│    06      │    07      │    08      │    09      │    10      │*/  
-                OPENEPIC,     WL_BONE,     SCROLLUP,   WL_BRAIN,    ARROW,       
-            /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
-            /*│    11      │    12      │    13      │    14      │    15      │*/ 
-                COPYACC,      FAST_UP,    SCROLLDOWN,  FAST_DOWN,   MEASURE,
-            /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    16      │    17      │    18      │    19      │*/ 
-                  OPENGE,     SPINE_C,     SPINE_T,     SPINE_L,    
-            /*├────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    SW      │    SC      │    THUMB   │     20     │*/
+            /*â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬ */
+            /*â”‚    01      â”‚    02      â”‚    03      â”‚    04      â”‚    05      â”‚ */
+                MC_15,        MC_4,        MC_8,        MC_10,       MC_13,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
+            /*â”‚    06      â”‚    07      â”‚    08      â”‚    09      â”‚    10      â”‚*/  
+                MC_2,         MC_5,        SCROLLUP,    MC_6,        MC_12,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
+            /*â”‚    11      â”‚    12      â”‚    13      â”‚    14      â”‚    15      â”‚*/ 
+                MC_0,         FAST_UP,    SCROLLDOWN,  FAST_DOWN,   MC_14,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
+            /*â”‚    16      â”‚    17      â”‚    18      â”‚    19      â”‚*/ 
+                  MC_1,        MC_20,       MC_21,       MC_22,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
+            /*â”‚    SW      â”‚    SC      â”‚    THUMB   â”‚     20     â”‚*/
                   SCROLLUP,   SCROLLDOWN,   MO(1),      DICTATE,      
-            /*├────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    LEFT    │    RIGHT        UP      │    DOWN   │ */
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
+            /*â”‚    LEFT    â”‚    RIGHT        UP      â”‚    DOWN   â”‚ */
                 KC_MS_LEFT, KC_MS_RIGHT,   KC_MS_UP,   KC_MS_DOWN
-            /*└────────────┴────────────┴────────────┴────────────┘*/
+            /*â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜*/
     ),
     
     [1] = LAYOUT_tartarus2(
-            /*┌────────────┬────────────┬────────────┬────────────┬────────────┬ */
-            /*│    01      │    02      │    03      │    04      │    05      │ */
-                  KC_H,        KC_TRNS,     KC_TRNS,     KC_TRNS,   INTERZOOM,      
-            /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
-            /*│    06      │    07      │    08      │    09      │    10      │*/  
-                  KC_P,     WL_HARDWARE, KC_MS_WH_UP,  WL_STROKE,    ELLIPSE,       
-            /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/
-            /*│    11      │    12      │    13      │    14      │    15      │*/ 
-                  KC_R,     KC_MS_WH_UP, KC_MS_WH_DOWN, KC_MS_WH_DOWN,     ROI, 
-            /*├────────────┼────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    16      │    17      │    18      │    19      │*/
-               OPENMCKESSON,   KC_TRNS,     FX_PREV,     FX_NEXT,
-            /*├────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    SW      │    SC      │    THUMB      │    20   │*/
+            /*â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬ */
+            /*â”‚    01      â”‚    02      â”‚    03      â”‚    04      â”‚    05      â”‚ */
+                  KC_H,        KC_TRNS,     KC_TRNS,     KC_TRNS,     MC_18,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
+            /*â”‚    06      â”‚    07      â”‚    08      â”‚    09      â”‚    10      â”‚*/  
+                  KC_P,        MC_9,      KC_MS_WH_UP,   MC_7,        MC_16,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
+            /*â”‚    11      â”‚    12      â”‚    13      â”‚    14      â”‚    15      â”‚*/ 
+                  KC_R,     KC_MS_WH_UP, KC_MS_WH_DOWN, KC_MS_WH_DOWN,  MC_17,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
+            /*â”‚    16      â”‚    17      â”‚    18      â”‚    19      â”‚*/
+                  MC_3,        KC_TRNS,     FX_PREV,     FX_NEXT,
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
+            /*â”‚    SW      â”‚    SC      â”‚    THUMB      â”‚    20   â”‚*/
                   KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,      
-            /*├────────────┼────────────┼────────────┼────────────┼*/  
-            /*│    LEFT    │    RIGHT   │    UP       │    DOWN   │ */
+            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
+            /*â”‚    LEFT    â”‚    RIGHT   â”‚    UP       â”‚    DOWN   â”‚ */
                   KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS
-            /*└────────────┴────────────┴────────────┴────────────┘*/
+            /*â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜*/
         
     )
 };
@@ -354,7 +344,7 @@ typedef enum { LST_NONE, LST_IDLE, LST_DICT, LST_SCROLL } led_state_t;
 
 // --- Idle effect table: every Synapse pattern the hardware runs natively ----
 // The IDLE state applies whichever entry is selected; FX_NEXT/FX_PREV on layer
-// 1 (or RAW HID 0xCC) cycle it live. Edit colours/speeds here to taste — this
+// 1 (or RAW HID 0xCC) cycle it live. Edit colours/speeds here to taste â€” this
 // is the "settable from keymap.c" surface.
 static void fx_static_blue(void)   { tartarus_rgb_static(0x00, 0x40, 0xFF); }
 static void fx_spectrum(void)      { tartarus_rgb_effect_spectrum(); }
@@ -520,7 +510,66 @@ void eeconfig_init_user(void) {
     eeprom_was_reset = true;  // only called when EEPROM is (re)initialized
 }
 
+// --- Default VIA macros (the PACS functions, GUI-editable) ------------------
+// Dynamic macros replay through send_string, so their stored bytes use the
+// exact same encoding SEND_STRING literals compile to. This buffer is the
+// original hardcoded sequences, one macro per NUL-terminated entry, in the
+// M0..M22 order documented at the enum above (M23 spare = empty).
+static const char macro_defaults[] =
+    // M0 Copy Accession
+    SS_LSFT("`") SS_LSFT("`") SS_TAP(X_ENTER) SS_DELAY(100)
+    SS_LSFT(SS_LCTL(SS_TAP(X_LEFT))) SS_LCTL("c") SS_LSFT(SS_TAP(X_HOME))
+    SS_TAP(X_DEL) SS_TAP(X_DEL) "\0"
+    // M1 Open GE
+    SS_LSFT(SS_TAP(X_TAB)) SS_TAP(X_END) SS_DELAY(75) SS_TAP(X_TAB)
+    SS_LCTL("v") SS_DELAY(150) SS_TAP(X_ENTER) "\0"
+    // M2 Open Epic
+    SS_LCTL("2") SS_DELAY(2500) SS_LCTL("v") SS_DELAY(500) SS_TAP(X_ENTER)
+    SS_DELAY(2500) SS_LALT(SS_LSFT("a")) "\0"
+    // M3 Open McKesson
+    SS_LCTL("f") SS_DELAY(500) SS_TAP(X_BSPC) SS_LCTL("v") SS_TAP(X_ENTER)
+    SS_DELAY(500) SS_TAP(X_ENTER) "\0"
+    // M4..M11 window/level presets: click, settle, keypad digit
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_1) "\0"  // M4  soft tissue
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_2) "\0"  // M5  bone
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_3) "\0"  // M6  brain
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_4) "\0"  // M7  stroke
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_5) "\0"  // M8  lung
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_6) "\0"  // M9  hardware
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_7) "\0"  // M10 vascular
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_KP_8) "\0"  // M11 subdural
+    // M12..M19 PACS tools: click, settle, tool letter
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_A) "\0"             // M12 arrow
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_Z) "\0"             // M13 zoom
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_M) "\0"             // M14 measure
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_Y) "\0"             // M15 annotation
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_E) "\0"             // M16 ellipse
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_LSFT(SS_TAP(X_E)) "\0"    // M17 ROI
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_LSFT(SS_TAP(X_Z)) "\0"    // M18 interzoom
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_H) "\0"             // M19 hang
+    // M20..M22 spine labels
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_C) "\0"             // M20 spine C
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_T) "\0"             // M21 spine T
+    SS_TAP(X_BTN1) SS_DELAY(50) SS_TAP(X_L);                 // M22 spine L
+    // (implicit literal NUL terminates M22; M23 spare stays empty)
+
+// Seed the factory macros whenever macro slot 0 is empty — i.e. on a fresh
+// EEPROM or after a macro reset. A GUI-edited macro 0 is nonzero, so user
+// edits are never overwritten. (Emptying M0 on purpose re-seeds on next boot.)
+static void macro_seed_defaults(void) {
+    if (sizeof(macro_defaults) > dynamic_keymap_macro_get_buffer_size()) {
+        return;
+    }
+    uint8_t first = 0xFF;
+    dynamic_keymap_macro_get_buffer(0, 1, &first);
+    if (first != 0x00) {
+        return;
+    }
+    dynamic_keymap_macro_set_buffer(0, (uint16_t)sizeof(macro_defaults), (uint8_t *)macro_defaults);
+}
+
 void keyboard_post_init_user(void) {
+    macro_seed_defaults();
     if (eeprom_was_reset) {
         soft_reset_keyboard();
     }
@@ -695,253 +744,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
-        case COPYACC: 
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_LSFT("`")
-                    SS_LSFT("`")
-                    SS_TAP(X_ENTER)
-                    SS_DELAY(100)
-                    SS_LSFT(SS_LCTL(SS_TAP(X_LEFT)))
-                    SS_LCTL("c")
-                    SS_LSFT(SS_TAP(X_HOME))
-                    SS_TAP(X_DEL)
-                    SS_TAP(X_DEL)
-                );
-            }
-            return false;
 
-        case OPENGE: 
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_LSFT(SS_TAP(X_TAB))
-                    SS_TAP(X_END)
-                    SS_DELAY(75)
-                    SS_TAP(X_TAB)
-                    SS_LCTL("v")
-                    SS_DELAY(150)
-                    SS_TAP(X_ENTER)
-                );
-            }
-            return false;
-
-        case OPENEPIC: 
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_LCTL("2")
-                    SS_DELAY(2500)
-                    SS_LCTL("v")
-                    SS_DELAY(500)
-                    SS_TAP(X_ENTER)
-                    SS_DELAY(2500)
-                    SS_LALT(SS_LSFT("a"))
-                );
-            }
-            return false;
-
-        case OPENMCKESSON: 
-            if (record->event.pressed) {
-                SEND_STRING(
-                    SS_LCTL("f")
-                    SS_DELAY(500)
-                    SS_TAP(X_BSPC)
-                    SS_LCTL("v")
-                    SS_TAP(X_ENTER)
-                    SS_DELAY(500)
-                    SS_TAP(X_ENTER)
-                );
-            }
-            return false;
-
-		case WL_SOFT:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_1)
-				);
-			}
-		return false;
-
-		case WL_BONE:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_2)
-				);
-			}
-		return false;
-
-		case WL_BRAIN:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_3)
-				);
-			}
-		return false;
-
-		case WL_STROKE:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_4)
-				);
-			}
-		return false;
-
-		case WL_LUNG:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_5)
-				);
-			}
-		return false;
-
-		case WL_HARDWARE:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_6)
-				);
-			}
-		return false;
-
-		case WL_VASCULAR:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_7)
-				);
-			}
-		return false;
-
-		case WL_SUBDURAL:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_KP_8)
-				);
-			}
-		return false;
-
-		case ARROW:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_A)
-				);
-			}
-		return false;
-
-		case ELLIPSE:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_E)
-				);
-			}
-		return false;
-
-		case MEASURE:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_M)
-				);
-			}
-		return false;
-
-		case ROI:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_LSFT(SS_TAP(X_E))
-				);
-			}
-		return false;
-
-		case ZOOM:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_Z)
-				);
-			}
-		return false;
-
-        case INTERZOOM:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_LSFT(SS_TAP(X_Z))
-				);
-			}
-		return false;
-
- 		case ANNOTATION:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_Y)
-				);
-			}
-		return false;
-
- 		case HANG:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_H)
-				);
-			}
-		return false;
-
-		case SPINE_C:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_C)
-				);
-			}
-		return false;
-
-		case SPINE_T:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_T)
-				);
-			}
-		return false;
-
-		case SPINE_L:
-			if (record->event.pressed) {
-				SEND_STRING(
-					SS_TAP(X_BTN1)
-					SS_DELAY(50)
-					SS_TAP(X_L)
-				);
-			}
-		return false;
 
     }
     return true; 
