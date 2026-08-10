@@ -9,6 +9,24 @@
 #include "pio_usb_ll.h"
 #include "report_descriptor_parser.h"
 #include "report_parser.h"
+#include "c1.h"
+
+// Route wear-leveling flash operations through the core-1 park handshake.
+// The platform driver's no-op versions are made weak by the keymap config.h
+// (#pragma weak backing_store_lock/unlock), so these strong definitions win.
+// Without this, EEPROM writes disable XIP flash while core 1 (the PIO-USB
+// host) executes flash-resident code, hard-faulting it — the Tartarus then
+// never mounts for that boot. (This was written in mini.c originally, but
+// mini.c is not part of the build, so the protection never actually linked.)
+bool backing_store_unlock(void) {
+    c1_before_flash_operation();
+    return true;
+}
+
+bool backing_store_lock(void) {
+    c1_after_flash_operation();
+    return true;
+}
 
 matrix_row_t*           matrix_dest;
 bool                    mouse_send_flag = false;

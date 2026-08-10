@@ -5,6 +5,7 @@
 #include "tartarus_rgb.h"
 #include "via.h"
 #include "color.h"
+#include "c1.h"
 
 // --- Host-driven Tartarus control via RAW HID -------------------------------
 // Keyboard input/output injection is blocked from the dev box, so the only
@@ -144,6 +145,19 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
                 resp[4 + i * 4] = (uint8_t)(razer_inst_desclen[i] & 0xFF);
                 resp[5 + i * 4] = (uint8_t)(razer_inst_desclen[i] >> 8);
             }
+            raw_hid_send(resp, sizeof(resp));
+            break;
+        }
+
+        case 0xD3: {  // core-1 liveness: [0xD3] -> [0xD3, ready, heartbeat u32]
+            uint8_t  resp[32] = {0};
+            uint32_t hb       = c1_heartbeat;
+            resp[0] = 0xD3;
+            resp[1] = c1_ready;
+            resp[2] = (uint8_t)(hb & 0xFF);
+            resp[3] = (uint8_t)(hb >> 8);
+            resp[4] = (uint8_t)(hb >> 16);
+            resp[5] = (uint8_t)(hb >> 24);
             raw_hid_send(resp, sizeof(resp));
             break;
         }
