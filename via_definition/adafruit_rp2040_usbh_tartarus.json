@@ -47,7 +47,7 @@
               "label": "Idle Effect",
               "type": "dropdown",
               "options": [
-                ["Per-key reactive (blue/red)", 0],
+                ["Static (idle colour)", 0],
                 ["Spectrum cycle", 1],
                 ["Rainbow wave", 2],
                 ["Color wheel", 3],

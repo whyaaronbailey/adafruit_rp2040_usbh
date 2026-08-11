@@ -410,7 +410,7 @@ typedef enum { LST_NONE, LST_IDLE, LST_DICT, LST_SCROLL } led_state_t;
 // The IDLE state applies whichever entry is selected; FX_NEXT/FX_PREV on layer
 // 1 (or RAW HID 0xCC) cycle it live. Edit colours/speeds here to taste â€” this
 // is the "settable from keymap.c" surface.
-static void fx_static_blue(void)   { tartarus_rgb_static(0x00, 0x40, 0xFF); }
+static void fx_static_base(void)   { RGB b = hsv_to_rgb(base_hsv); tartarus_rgb_static(b.r, b.g, b.b); }
 static void fx_spectrum(void)      { tartarus_rgb_effect_spectrum(); }
 static void fx_wave(void)          { tartarus_rgb_effect_wave(1); }
 static void fx_wheel(void)         { tartarus_rgb_effect_wheel(1); }
@@ -424,7 +424,7 @@ static void fx_reactive_cyan(void) { tartarus_rgb_effect_reactive(2, 0x00, 0xFF,
 
 typedef void (*idle_fx_fn)(void);
 static const idle_fx_fn idle_fx_table[] = {
-    fx_static_blue,    // 0  static light blue (default)
+    fx_static_base,    // 0  static, idle colour (default)
     fx_spectrum,       // 1  spectrum cycle
     fx_wave,           // 2  rainbow wave
     fx_wheel,          // 3  colour wheel
@@ -479,7 +479,7 @@ static void led_set_idle_fx(uint8_t idx) {
     frame_valid = false;     // the device no longer shows our last frame
 }
 
-static void led_render_frame(void) {
+__attribute__((unused)) static void led_render_frame(void) {
     bool    scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     bool    pulse_red = scrolling && ((timer_read32() / scroll_half) & 1);
     uint8_t want[TARTARUS_RGB_KEYS][3];
@@ -515,6 +515,12 @@ static void led_apply(void) {
     if (ready && !was_ready) {
         led_applied = LST_NONE;  // device (re)appeared: resend current state
         frame_valid = false;
+        // CRITICAL: force the Tartarus back to NORMAL device mode. Driver mode
+        // (needed only for per-key custom frames) makes the device stop
+        // sending standard keyboard reports — keys go completely dead on the
+        // converter. The device keeps its mode while powered, so it may still
+        // be stuck from older firmware; un-stick it on every (re)appearance.
+        tartarus_rgb_driver_mode(false);
         // Brightness is a device-side setting, not part of a colour frame, so
         // the reapply above won't restore it. Re-push it whenever the device
         // (re)appears so a persisted brightness — or the boot default — sticks.
@@ -538,14 +544,11 @@ static void led_apply(void) {
         return;
     }
 
-    // Default mode: per-key reactive frames (continuous, self-diffing).
-    if (idle_fx == 0) {
-        led_applied = LST_IDLE;
-        led_render_frame();
-        return;
-    }
-
-    // A native idle effect is selected: edge-triggered, scroll pulses whole pad.
+    // All idle effects (including 0 = static idle colour) are NATIVE device
+    // effects: they never enter driver mode, so the keyboard keeps working.
+    // Per-key custom frames (led_render_frame) are deliberately NOT used here —
+    // driver mode suppresses the Tartarus's key reports. Edge-triggered;
+    // scrolling shows a whole-pad breathing pulse in the accent colour.
     bool        scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     led_state_t want      = scrolling ? LST_SCROLL : LST_IDLE;
     if (want == led_applied) {
