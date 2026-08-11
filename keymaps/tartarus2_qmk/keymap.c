@@ -212,6 +212,14 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
             break;
         }
 
+        case 0xD6:  // PowerMic bench: [0xD6, button, down] -> press/release button
+            if (data[2]) {
+                powermic_button_press(data[1]);
+            } else {
+                powermic_button_release(data[1]);
+            }
+            break;
+
         case 0xC4:  // set device mode: [0xC4, mode]   (0x03 = driver mode)
             rz_zero(b);
             b[5] = 0x02; b[6] = 0x00; b[7] = 0x04; b[8] = data[1]; b[9] = 0x00;
@@ -328,7 +336,26 @@ enum custom_keycodes {
     L16_MCKESSON,       // M3
     KX_HANG,            // M19 (not on a key by default; assignable)
     KX_WLSUBDURAL,       // M11 (not on a key by default; assignable)
-    DICT_AHK            // sends Ctrl+F21 for AHK/PowerScribe AND toggles dictate LEDs
+    DICT_AHK,           // sends Ctrl+F21 for AHK/PowerScribe AND toggles dictate LEDs
+
+    // PowerMic buttons (see powermic.h). Each mirrors the physical handset
+    // button: press on key-down, release on key-up. DICTATE above is
+    // Button 3 and also toggles the red LEDs.
+    PM_K_TRANSCRIBE,    // Button 1
+    PM_K_TABBACK,       // Button 2
+    PM_K_TABFWD,        // Button 4
+    PM_K_REWIND,        // Button 5
+    PM_K_FFWD,          // Button 6
+    PM_K_STOPPLAY,      // Button 7
+    PM_K_CUSTOML,       // Button 8
+    PM_K_ENTERSEL,      // Button 9
+    PM_K_CUSTOMR        // Button 10
+};
+
+// PowerMic button index for each PM_K_* keycode, in enum order.
+static const uint8_t pm_button_for[] = {
+    PM_TRANSCRIBE, PM_TAB_BACK, PM_TAB_FORWARD, PM_REWIND, PM_FFWD,
+    PM_STOP_PLAY, PM_CUSTOM_LEFT, PM_ENTER_SELECT, PM_CUSTOM_RIGHT
 };
 
 // Macro slot for each runner key, indexed by (keycode - K01_ANNOT).
@@ -805,6 +832,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     // Named macro-runner keys: play the mapped VIA dynamic macro. The name is
     // for the GUI; the behaviour is whatever the (editable) macro contains.
+    // PowerMic buttons: mirror press and release.
+    if (keycode >= PM_K_TRANSCRIBE && keycode <= PM_K_CUSTOMR) {
+        if (record->event.pressed) {
+            powermic_button_press(pm_button_for[keycode - PM_K_TRANSCRIBE]);
+        } else {
+            powermic_button_release(pm_button_for[keycode - PM_K_TRANSCRIBE]);
+        }
+        return false;
+    }
+
     if (keycode >= K01_ANNOT && keycode <= KX_WLSUBDURAL) {
         if (record->event.pressed) {
             dynamic_keymap_macro_send(pacs_macro_for[keycode - K01_ANNOT]);

@@ -34,7 +34,16 @@
     { "name": "McKesson", "title": "Open study in McKesson - runs M3 (default: layer 1 key 16)", "shortName": "MCK" },
     { "name": "Hang", "title": "Hanging protocol - runs M19 (unassigned by default)", "shortName": "HANG" },
     { "name": "WL Subdural", "title": "Window/level subdural - runs M11 (unassigned by default)", "shortName": "SUBD" },
-    { "name": "Dictate (AHK)", "title": "Sends Ctrl+F21 for AutoHotkey/PowerScribe and toggles the red dictate LEDs", "shortName": "DICT*" }
+    { "name": "Dictate (AHK)", "title": "Sends Ctrl+F21 for AutoHotkey/PowerScribe and toggles the red dictate LEDs", "shortName": "DICT*" },
+    { "name": "PM Transcribe", "title": "PowerMic Button 1 (Transcribe), focus-independent", "shortName": "TRSC" },
+    { "name": "PM Tab Back", "title": "PowerMic Button 2 (Tab backward)", "shortName": "PMTB" },
+    { "name": "PM Tab Fwd", "title": "PowerMic Button 4 (Tab forward)", "shortName": "PMTF" },
+    { "name": "PM Rewind", "title": "PowerMic Button 5 (Rewind)", "shortName": "REW" },
+    { "name": "PM Fast Fwd", "title": "PowerMic Button 6 (Fast forward)", "shortName": "FFWD" },
+    { "name": "PM Stop/Play", "title": "PowerMic Button 7 (Stop/Play)", "shortName": "PLAY" },
+    { "name": "PM Custom Left", "title": "PowerMic Button 8 (Custom left)", "shortName": "PM-L" },
+    { "name": "PM Enter/Select", "title": "PowerMic Button 9 (Enter/Select)", "shortName": "ENTR" },
+    { "name": "PM Custom Right", "title": "PowerMic Button 10 (Custom right)", "shortName": "PM-R" }
   ],
   "menus": [
     {
