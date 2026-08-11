@@ -258,10 +258,8 @@ void tartarus_rgb_set_key(uint8_t key, uint8_t r, uint8_t g, uint8_t b_) {
 void tartarus_rgb_flush(void) {
     uint8_t b[RZ_LEN];
 
-    // NOTE: custom frames do NOT require Razer driver mode (verified on
-    // hardware: frames render fine in normal device mode). Driver mode must
-    // never be entered here — it makes the Tartarus stop sending standard
-    // keyboard reports, killing every key while the LEDs keep working.
+    // Custom frames work in normal device mode. Never enter driver mode
+    // here: it stops the Tartarus sending key reports.
 
     // 1) Load the custom frame: row 0, columns 0..KEYS-1.
     // extended set_custom_frame: class 0x0F cmd 0x03, data_size 0x47,

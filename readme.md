@@ -6,53 +6,52 @@ This is based on [Sekigon's Keyboard Quantizer mini-full branch](https://github.
 
 This is for QMK 0.24. I have not updated it for newer builds. However, raghur's change's have removed the prior vendor dependences. This now works with the latest tinyUSB and PICO-PIO-USB distributions, with the tested distrubtions as submodules. 
 
-## Highlights
+## LED control
 
-* **Tartarus per-key RGB control from the converter.** A generalizable,
-  OpenRazer-derived driver (`tartarus_rgb.c/h`, GPL-2.0) gives the firmware a
-  QMK-RGB-Matrix-style API over the Tartarus V2/Pro backlight: static colours,
-  brightness, every native hardware effect (spectrum, wave, wheel, breathing,
-  starlight, reactive), and a 20-key custom framebuffer — all in the device's
-  normal mode, with the keyboard fully functional (Razer "driver mode" is
-  never used; it kills key reporting). The default lighting is per-key
-  reactive: idle colour baseline, pressed keys light in the accent colour,
-  and the active scroll key pulses at the scroll speed. Protocol notes and
-  the hard-won transport details are in `tartarus_rgb.README.md`.
-* **VIA support.** The `tartarus2_ahk` and `tartarus2_qmk` keymaps are fully
-  [VIA](https://usevia.app)-enabled: graphical key remapping (persists in
-  EEPROM, no reflashing), GUI-editable dynamic macros for the PACS functions,
-  and a custom **Lighting** menu (effect picker, three colour pickers,
-  brightness and speed sliders) whose settings persist across power loss.
-  Sideload `via_definition/adafruit_rp2040_usbh_tartarus.json` in usevia.app's
-  Design tab.
-* **Dual-core flash safety.** VIA EEPROM writes previously hard-faulted the
-  PIO-USB host on core 1 (XIP disabled while core 1 executed flash-resident
-  code). The wear-leveling backing store now parks core 1 across every flash
-  operation.
-* **AutoHotkey companion.** `tartarus.ahk` (+ `tools/hidapitester.exe`) is the
-  workstation half of the AHK model: it maps the F-codes to Centricity /
-  PowerScribe actions with window activation, and mirrors dictate/scroll state
-  back into the LEDs over RAW HID.
+The converter can now drive the Tartarus V2/Pro backlight. tartarus_rgb.c is a
+small driver derived from OpenRazer (GPL-2.0) with static colors, brightness,
+the built-in Razer effects, and a 20-key custom framebuffer. Everything runs
+with the device in normal mode. Do not put the device in Razer driver mode; it
+stops sending key reports while the LEDs keep working, and the mode sticks
+until the device loses power. The default lighting is per-key reactive: idle
+color baseline, pressed keys light up in the accent color, and the active
+scroll key pulses at the scroll speed. Protocol details are in
+tartarus_rgb.README.md.
+
+## VIA
+
+The tartarus2_ahk and tartarus2_qmk keymaps support [VIA](https://usevia.app).
+Keys can be remapped in the browser and stored in EEPROM, the PACS macro
+sequences are editable in the Macros pane, and a custom Lighting menu sets the
+effect, colors, brightness and scroll speeds. Settings survive power loss.
+Load `via_definition/adafruit_rp2040_usbh_tartarus.json` from the Design tab
+(leave "Use V2 definitions" off).
+
+EEPROM writes used to crash the USB host stack on core 1. The wear-leveling
+backing store now parks core 1 during flash operations.
+
+## AutoHotkey
+
+tartarus.ahk is the workstation half of the ahk build. It maps the F-codes to
+Centricity and PowerScribe actions with window activation, and reports
+dictate/scroll state back to the converter so the LEDs follow. hidapitester.exe
+(from todbot/hidapitester, a copy is in `tools/`) must sit next to the script.
 
 ## Available keymaps
 
 This distribution is generic, and includes layouts and keymaps for:
 * Generic Full Size ANSI 104 layout under `keymaps/default`
 * Razer Tartarus V2/Pro:
-  * `keymaps/tartarus2` — plain F-key emission (F13–F24, Ctrl/Shift combos);
-    all mapping is done host-side. No VIA, no LEDs.
-  * `keymaps/tartarus2_ahk` — the **AHK model** with everything on top: same
-    F-code defaults as `tartarus2`, plus VIA, the LED engine (per-key reactive
-    baseline, red-while-dictating, per-key scroll pulse driven by the AHK
-    script), and GUI-editable PACS macros in the palette. Prebuilt UF2s live
-    in `firmware/`.
-  * `keymaps/tartarus2_qmk` — the **self-contained model**: the PACS functions
-    live on the keys themselves as VIA dynamic macros (seeded with the original
-    sequences), plus Dictate/PowerMic emulation, firmware scroll toggles, and
-    the same LED engine. Works with no host-side software, but cannot activate
-    target windows.
-  * `keymaps/tartarus2_pacs` — the pre-VIA ancestor of `tartarus2_qmk`
-    (hardcoded PACS sequences, RAW HID bench harness).
+  * `keymaps/tartarus2` - each key sends a unique F-key or modifier+F-key
+    combo and all the real functions live host-side in tartarus.ahk. No VIA,
+    no LEDs.
+  * `keymaps/tartarus2_ahk` - same key assignments as tartarus2, plus VIA, the
+    LED engine, and the PACS macros available in the VIA palette. This is what
+    I use. Prebuilt UF2s are in `firmware/`.
+  * `keymaps/tartarus2_qmk` - self-contained variant: the PACS functions are
+    on the keys as VIA macros, with PowerMic dictate emulation and firmware
+    scroll toggles. Needs no host-side software, but cannot activate windows.
+  * `keymaps/tartarus2_pacs` - older pre-VIA version of the same idea.
 
 ## How to use this repository
 
@@ -81,10 +80,9 @@ where `_your_choice` is one of the keymaps listed above (`default`,
 ## Attribution
 
 The Razer LED protocol is derived from
-[OpenRazer](https://github.com/openrazer/openrazer) (GPL-2.0) — see
-`tartarus_rgb.README.md` for specifics. `tools/hidapitester.exe` is
-[todbot/hidapitester](https://github.com/todbot/hidapitester), bundled for the
-AHK LED transport.
+[OpenRazer](https://github.com/openrazer/openrazer) (GPL-2.0); see
+tartarus_rgb.README.md. `tools/hidapitester.exe` is
+[todbot/hidapitester](https://github.com/todbot/hidapitester).
 
 ## TODO:
 * Scroll wheel and scroll click customization (need to implement additional interfaces)

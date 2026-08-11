@@ -537,15 +537,10 @@ static void led_apply(void) {
     if (ready && !was_ready) {
         led_applied = LST_NONE;  // device (re)appeared: resend current state
         frame_valid = false;
-        // CRITICAL: force the Tartarus back to NORMAL device mode. Driver mode
-        // (needed only for per-key custom frames) makes the device stop
-        // sending standard keyboard reports — keys go completely dead on the
-        // converter. The device keeps its mode while powered, so it may still
-        // be stuck from older firmware; un-stick it on every (re)appearance.
+        // Clear driver mode (it kills key reporting and sticks while the
+        // device is powered), then re-push brightness, which is device-side
+        // state that a frame reapply would not restore.
         tartarus_rgb_driver_mode(false);
-        // Brightness is a device-side setting, not part of a colour frame, so
-        // the reapply above won't restore it. Re-push it whenever the device
-        // (re)appears so a persisted brightness — or the boot default — sticks.
         tartarus_rgb_brightness(led_bright);
     }
     was_ready = ready;
@@ -566,10 +561,8 @@ static void led_apply(void) {
         return;
     }
 
-    // Default mode (idle_fx == 0): per-key reactive frames — baseline in the
-    // idle colour, held keys in the accent colour, scroll pulse on the
-    // initiating key. Custom frames are verified to work in NORMAL device
-    // mode (driver mode is never entered — it would kill the keyboard).
+    // Default mode (idle_fx == 0): per-key reactive frames. Baseline in the
+    // idle colour, held keys in the accent colour, pulse on the scroll key.
     if (idle_fx == 0) {
         led_applied = LST_IDLE;
         led_render_frame();
@@ -669,15 +662,10 @@ static void macro_seed_defaults(void) {
 }
 
 // --- VIA "Lighting" settings persistence (EEPROM kb datablock) --------------
-// The tunable LED settings above otherwise live only in RAM and reset to the
-// compiled defaults every boot. Pack them into the keyboard EEPROM datablock
-// so VIA's "Save" makes them stick. The write runs through the wear-leveling
-// backing store, whose lock/unlock hooks park core 1 across the flash op (see
-// matrix.c), so persisting never disturbs the PIO-USB host on core 1.
-//
-// A format byte inside the block tells a real save apart from a freshly
-// initialized (zeroed) datablock: any version mismatch means "nothing saved",
-// and the compiled-in RAM defaults are kept untouched.
+// Saved on VIA "Save", loaded at post-init. The version byte tells a real
+// save apart from a zeroed block, so compiled defaults survive a fresh
+// EEPROM. Writes go through the wear-leveling backing store, which parks
+// core 1 across the flash op (see matrix.c).
 #define TRGB_CFG_VERSION 1
 
 typedef struct PACKED {

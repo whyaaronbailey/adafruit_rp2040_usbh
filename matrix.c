@@ -11,13 +11,10 @@
 #include "report_parser.h"
 #include "c1.h"
 
-// Route wear-leveling flash operations through the core-1 park handshake.
-// The platform driver's no-op versions are made weak by the keymap config.h
-// (#pragma weak backing_store_lock/unlock), so these strong definitions win.
-// Without this, EEPROM writes disable XIP flash while core 1 (the PIO-USB
-// host) executes flash-resident code, hard-faulting it — the Tartarus then
-// never mounts for that boot. (This was written in mini.c originally, but
-// mini.c is not part of the build, so the protection never actually linked.)
+// Park core 1 around wear-leveling flash operations. EEPROM writes disable
+// XIP while core 1 (the PIO-USB host) runs flash-resident code, which
+// hard-faults it. The platform driver's no-op versions are made weak by
+// config.h (#pragma weak), so these definitions win.
 bool backing_store_unlock(void) {
     c1_before_flash_operation();
     return true;

@@ -1,101 +1,72 @@
-# tartarus_rgb — Razer Tartarus RGB driver for QMK USB-host converters
+# tartarus_rgb - Razer Tartarus RGB control from the converter
 
-A small, self-contained driver that controls the per-key RGB LEDs of a **Razer
-Tartarus V2 / Pro** (and, in principle, other OpenRazer "extended-matrix" Razer
-keyboards) that is attached to a **QMK + TinyUSB USB-host converter** — here the
-Adafruit RP2040 USB Host running `keyboards/converter/adafruit_rp2040_usbh`.
+Controls the backlight of a Razer Tartarus V2/Pro attached to the converter's
+USB host port. The wire protocol comes from
+[OpenRazer](https://github.com/openrazer/openrazer) (GPL-2.0), mainly
+razerchromacommon.c and razercommon.c. This is a minimal reimplementation for
+the embedded host case and is GPL-2.0-or-later like the rest of the tree.
 
-It exposes a small QMK-RGB-Matrix-style API so a keymap can drive whole-device
-colours, the device's own hardware effects, or a per-key framebuffer, without
-knowing anything about the Razer wire protocol.
+## Things that cost me a lot of time
 
-## Why this is not trivial (the key discovery)
+Razer commands are 90-byte HID FEATURE reports (bmRequestType 0x21, bRequest
+0x09, wValue 0x0300) with an XOR checksum over bytes 2..87. Getting them to the
+device from TinyUSB has three traps:
 
-Razer LED control uses OpenRazer's vendor protocol: a 90-byte **HID FEATURE
-SET_REPORT** (`bmRequestType 0x21`, `bRequest 0x09`, `wValue 0x0300`) carrying a
-command whose CRC is the XOR of bytes 2..87.
+1. `tuh_hid_set_report()` does not work. It targets a HID instance, the device
+   stalls every report, and the completion callback reports len=0. You have to
+   send a raw control transfer to a specific interface number (wIndex), same as
+   OpenRazer does. See `tartarus_send_iface()` in matrix.c. On this Tartarus
+   the control interface is interface 2; the firmware finds it as the
+   highest-numbered HID interface with protocol NONE. Interface numbers are
+   stable across re-enumerations, TinyUSB instance indices are not.
 
-The non-obvious parts that make it actually work through a TinyUSB **host**:
+2. The device needs about 15 ms to process each command after the transfer
+   completes. Send the next one sooner and the previous one is silently
+   dropped even though the wire ACKed it. `rz_send()` paces this, and also
+   retries while the single TinyUSB control pipe is busy.
 
-1. **You must send a raw control transfer to a specific USB _interface number_
-   (`wIndex`), not via `tuh_hid_set_report(dev, instance, …)`.** The HID-instance
-   API targets the wrong interface and the device **STALLs every report**
-   (TinyUSB's completion callback then reports `len == 0`). See
-   `tartarus_send_iface()` in `matrix.c`, which mirrors OpenRazer's
-   `razer_send_control_msg` exactly.
-2. **The control interface is not the HID instance with the biggest descriptor.**
-   On the Tartarus the interfaces are: `itf0` = boot keyboard, `itf1` = 186-byte
-   HID, `itf2` = 94-byte HID — and **LED control lives on `itf2`**. The driver
-   auto-detects it as *the highest-numbered HID interface whose interface
-   protocol is NONE* (`tartarus_led_itfnum()`). USB interface numbers are
-   device-fixed, so this is stable across re-enumerations (unlike TinyUSB HID
-   instance indices, which shift on every reflash).
-3. **Transaction id `0x1F`** for the Tartarus V2/Pro (byte 1 of every report).
+3. Do not put the device in Razer driver mode. Custom frames do NOT need it
+   (they render fine in normal mode), and in driver mode the Tartarus stops
+   sending normal key reports: every key goes dead while the LEDs keep
+   working, and the mode sticks until the device loses power. The keymaps
+   send device-mode NORMAL whenever the device appears, which also recovers a
+   unit left stuck by other software.
 
-## LED matrix layout
+## LED matrix
 
-The Tartarus exposes its 20 keys as a **single logical matrix row** (row 0);
-column index maps 1:1 to the physical keys (`col 0` = key 1 … `col 19` = thumb).
-Writing to matrix rows 1+ addresses no physical LED.
+The Tartarus exposes its LEDs as one logical row (row 0) with columns mapping
+1:1 onto the 20 physical keys: col 0 = key 01 ... col 19 = key 20. Rows 1+
+address nothing.
 
-## API (`tartarus_rgb.h`)
+## API
 
 ```c
-bool tartarus_rgb_ready(void);                         // device mounted & interface known
+bool tartarus_rgb_ready(void);          // device mounted, interface known
 
-// Hardware effects (stored/run on the device — no per-frame host traffic):
+// Effects stored and run on the device:
 void tartarus_rgb_static(uint8_t r, uint8_t g, uint8_t b);
 void tartarus_rgb_brightness(uint8_t value);
 void tartarus_rgb_effect_none(void);
 void tartarus_rgb_effect_spectrum(void);
 void tartarus_rgb_effect_breathing(uint8_t r, uint8_t g, uint8_t b);
 void tartarus_rgb_effect_wave(uint8_t direction);
+// plus breathing_dual/breathing_random, starlight (single/dual/random),
+// reactive, wheel - see tartarus_rgb.h
 
-// Per-key framebuffer (QMK RGB-Matrix style):
+// Per-key framebuffer:
 void tartarus_rgb_set_all(uint8_t r, uint8_t g, uint8_t b);
-void tartarus_rgb_set_key(uint8_t key, uint8_t r, uint8_t g, uint8_t b); // key 0..19
-void tartarus_rgb_flush(void);                         // push buffer + display
+void tartarus_rgb_set_key(uint8_t key, uint8_t r, uint8_t g, uint8_t b); // 0..19
+void tartarus_rgb_flush(void);          // push buffer and display it
 ```
-
-### Never send Razer "driver mode" (hardware-verified)
-
-Everything this driver does — native effects **and per-key custom frames** —
-works with the device in its normal mode. Custom frames were long assumed to
-require Razer *driver mode*; on real hardware they render fine without it.
-
-Driver mode itself is actively harmful on a converter: in driver mode the
-Tartarus **stops sending standard keyboard reports** (key events reroute to the
-vendor interface), so every key goes dead while the LEDs keep working — and the
-mode persists for as long as the device stays powered. This driver therefore
-never enters driver mode, and well-behaved firmware should send device-mode
-NORMAL whenever the device (re)appears, to un-stick units left in driver mode
-by other software (`tartarus_rgb_driver_mode(false)`).
 
 ## Usage
 
-`rules.mk`:
+Add to rules.mk:
 
 ```make
 SRC += tartarus_rgb.c
 ```
 
-Example consumer (see `keymaps/tartarus2_pacs/keymap.c`): idle = light blue,
-dictating = red, continuous-scroll active = breathing blue. The state is applied
-edge-triggered from `housekeeping_task_user()`:
-
-```c
-void housekeeping_task_user(void) {
-    if (!tartarus_rgb_ready()) return;
-    if      (scrolling)  tartarus_rgb_effect_breathing(0x00, 0x50, 0xFF);
-    else if (dictating)  tartarus_rgb_static(0xFF, 0x00, 0x00);
-    else                 tartarus_rgb_static(0x00, 0x40, 0xFF);
-}
-```
-
-## Attribution / licence
-
-The Razer command wire-format and effect semantics are derived from
-[**OpenRazer**](https://github.com/openrazer/openrazer) (`razerchromacommon.c`,
-`razercommon.c`, `razerkbd_driver.c`), licensed **GPL-2.0**. This driver is a
-minimal re-implementation for the embedded USB-host case and is distributed under
-the same **GPL-2.0-or-later** licence. All protocol credit is OpenRazer's.
+The tartarus2_ahk and tartarus2_qmk keymaps are the reference consumers:
+per-key reactive baseline, all keys red while dictating, and a pulse on the
+active scroll key, driven from `housekeeping_task_user()`.
