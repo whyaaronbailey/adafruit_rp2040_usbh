@@ -515,6 +515,10 @@ static void led_apply(void) {
     if (ready && !was_ready) {
         led_applied = LST_NONE;  // device (re)appeared: resend current state
         frame_valid = false;
+        // Brightness is a device-side setting, not part of a colour frame, so
+        // the reapply above won't restore it. Re-push it whenever the device
+        // (re)appears so a persisted brightness — or the boot default — sticks.
+        tartarus_rgb_brightness(led_bright);
     }
     was_ready = ready;
     if (!ready) {
@@ -632,11 +636,68 @@ static void macro_seed_defaults(void) {
     dynamic_keymap_macro_set_buffer(0, (uint16_t)sizeof(macro_defaults), (uint8_t *)macro_defaults);
 }
 
+// --- VIA "Lighting" settings persistence (EEPROM kb datablock) --------------
+// The tunable LED settings above otherwise live only in RAM and reset to the
+// compiled defaults every boot. Pack them into the keyboard EEPROM datablock
+// so VIA's "Save" makes them stick. The write runs through the wear-leveling
+// backing store, whose lock/unlock hooks park core 1 across the flash op (see
+// matrix.c), so persisting never disturbs the PIO-USB host on core 1.
+//
+// A format byte inside the block tells a real save apart from a freshly
+// initialized (zeroed) datablock: any version mismatch means "nothing saved",
+// and the compiled-in RAM defaults are kept untouched.
+#define TRGB_CFG_VERSION 1
+
+typedef struct PACKED {
+    uint8_t version;   // TRGB_CFG_VERSION; anything else => treat as absent
+    uint8_t idle_fx;
+    uint8_t base_h, base_s;
+    uint8_t dict_h, dict_s;
+    uint8_t scroll_h, scroll_s;
+    uint8_t bright;
+    uint8_t rep_slow;  // REP_DELAY / 10        (VIA speed-slider units)
+    uint8_t rep_fast;  // REP_DELAY_FAST / 10
+} trgb_settings_t;
+_Static_assert(sizeof(trgb_settings_t) <= EECONFIG_KB_DATA_SIZE,
+               "trgb_settings_t larger than EECONFIG_KB_DATA_SIZE");
+
+static void trgb_settings_save(void) {
+    const trgb_settings_t s = {
+        .version  = TRGB_CFG_VERSION,
+        .idle_fx  = idle_fx,
+        .base_h   = base_hsv.h,   .base_s   = base_hsv.s,
+        .dict_h   = dict_hsv.h,   .dict_s   = dict_hsv.s,
+        .scroll_h = scroll_hsv.h, .scroll_s = scroll_hsv.s,
+        .bright   = led_bright,
+        .rep_slow = (uint8_t)(REP_DELAY / 10),
+        .rep_fast = (uint8_t)(REP_DELAY_FAST / 10),
+    };
+    eeconfig_update_kb_datablock(&s);  // parks core 1 via backing_store hooks
+}
+
+static void trgb_settings_load(void) {
+    trgb_settings_t s;
+    eeconfig_read_kb_datablock(&s);  // memsets to 0 if the block is invalid
+    if (s.version != TRGB_CFG_VERSION) {
+        return;  // no saved settings: keep the compiled-in defaults
+    }
+    base_hsv.h   = s.base_h;   base_hsv.s   = s.base_s;
+    dict_hsv.h   = s.dict_h;   dict_hsv.s   = s.dict_s;
+    scroll_hsv.h = s.scroll_h; scroll_hsv.s = s.scroll_s;
+    led_bright     = s.bright;
+    REP_DELAY      = (uint16_t)s.rep_slow * 10;
+    REP_DELAY_FAST = (uint16_t)s.rep_fast * 10;
+    led_set_idle_fx(s.idle_fx);  // sets idle_fx and forces a reapply
+    led_force_reapply();         // colours (and brightness, via led_apply's
+                                 // device-ready path) re-push to the device
+}
+
 void keyboard_post_init_user(void) {
     macro_seed_defaults();
     if (eeprom_was_reset) {
-        soft_reset_keyboard();
+        soft_reset_keyboard();  // fresh-EEPROM heal: reboots, never returns
     }
+    trgb_settings_load();
 }
 
 // --- VIA custom "Lighting" menu ---------------------------------------------
@@ -692,8 +753,7 @@ void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
             break;
 
         case id_custom_save:
-            // Settings currently live in RAM (defaults restored at boot).
-            // EEPROM persistence is a follow-up.
+            trgb_settings_save();  // persist the current settings to EEPROM
             break;
 
         default:

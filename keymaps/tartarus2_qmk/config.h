@@ -18,6 +18,12 @@
 // viewable and editable in the GUI. 24 slots: 23 seeded + 1 spare.
 #define DYNAMIC_KEYMAP_MACRO_COUNT 24
 
+// Reserve a keyboard EEPROM datablock for the VIA "Lighting" settings so they
+// survive a reboot (see trgb_settings_* in keymap.c). 16 bytes leaves headroom
+// past the current struct; growing this bumps EECONFIG_KB_DATA_VERSION, which
+// invalidates any older block automatically.
+#define EECONFIG_KB_DATA_SIZE 16
+
 #ifdef CRT0_EXTRA_CORES_NUMBER
 #undef CRT0_EXTRA_CORES_NUMBER
 #endif
