@@ -57,17 +57,19 @@ void tartarus_rgb_set_key(uint8_t key, uint8_t r, uint8_t g, uint8_t b); // key 
 void tartarus_rgb_flush(void);                         // push buffer + display
 ```
 
-### Static vs. per-key, and a converter caveat
+### Never send Razer "driver mode" (hardware-verified)
 
-`tartarus_rgb_static` / `_brightness` / `_effect_*` are **stored/native** effects:
-they need no handshake and never interfere with the device's own key reports.
+Everything this driver does — native effects **and per-key custom frames** —
+works with the device in its normal mode. Custom frames were long assumed to
+require Razer *driver mode*; on real hardware they render fine without it.
 
-`tartarus_rgb_flush` (per-key custom frames) first puts the device into **driver
-mode**, which on Razer hardware can **suppress the device's normal HID key
-reports**. On a *converter* the host reads those key reports, so enabling driver
-mode there can stop your keys from working. Prefer the static/native effects for
-status indication on a converter; use the per-key framebuffer only if you don't
-depend on the device's own keys (e.g. a direct-to-PC setup).
+Driver mode itself is actively harmful on a converter: in driver mode the
+Tartarus **stops sending standard keyboard reports** (key events reroute to the
+vendor interface), so every key goes dead while the LEDs keep working — and the
+mode persists for as long as the device stays powered. This driver therefore
+never enters driver mode, and well-behaved firmware should send device-mode
+NORMAL whenever the device (re)appears, to un-stick units left in driver mode
+by other software (`tartarus_rgb_driver_mode(false)`).
 
 ## Usage
 

@@ -12,8 +12,12 @@ This is for QMK 0.24. I have not updated it for newer builds. However, raghur's 
   OpenRazer-derived driver (`tartarus_rgb.c/h`, GPL-2.0) gives the firmware a
   QMK-RGB-Matrix-style API over the Tartarus V2/Pro backlight: static colours,
   brightness, every native hardware effect (spectrum, wave, wheel, breathing,
-  starlight, reactive), and a 20-key custom framebuffer. Protocol notes and the
-  hard-won transport details are in `tartarus_rgb.README.md`.
+  starlight, reactive), and a 20-key custom framebuffer — all in the device's
+  normal mode, with the keyboard fully functional (Razer "driver mode" is
+  never used; it kills key reporting). The default lighting is per-key
+  reactive: idle colour baseline, pressed keys light in the accent colour,
+  and the active scroll key pulses at the scroll speed. Protocol notes and
+  the hard-won transport details are in `tartarus_rgb.README.md`.
 * **VIA support.** The `tartarus2_ahk` and `tartarus2_qmk` keymaps are fully
   [VIA](https://usevia.app)-enabled: graphical key remapping (persists in
   EEPROM, no reflashing), GUI-editable dynamic macros for the PACS functions,
@@ -38,9 +42,10 @@ This distribution is generic, and includes layouts and keymaps for:
   * `keymaps/tartarus2` — plain F-key emission (F13–F24, Ctrl/Shift combos);
     all mapping is done host-side. No VIA, no LEDs.
   * `keymaps/tartarus2_ahk` — the **AHK model** with everything on top: same
-    F-code defaults as `tartarus2`, plus VIA, the LED engine (idle colour,
-    red-while-dictating, speed-matched scroll pulse driven by the AHK script),
-    and GUI-editable PACS macros in the palette.
+    F-code defaults as `tartarus2`, plus VIA, the LED engine (per-key reactive
+    baseline, red-while-dictating, per-key scroll pulse driven by the AHK
+    script), and GUI-editable PACS macros in the palette. Prebuilt UF2s live
+    in `firmware/`.
   * `keymaps/tartarus2_qmk` — the **self-contained model**: the PACS functions
     live on the keys themselves as VIA dynamic macros (seeded with the original
     sequences), plus Dictate/PowerMic emulation, firmware scroll toggles, and
