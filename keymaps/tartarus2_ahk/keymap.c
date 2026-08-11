@@ -66,7 +66,7 @@ static uint16_t scroll_half;  // defined with an initializer in the LED block
 // colour picker round-trippable, RGB is what the wire wants).
 static HSV     base_hsv   = {152, 255, 255};  // idle baseline: light blue
 static HSV     dict_hsv   = {0, 255, 255};    // dictating: red
-static HSV     scroll_hsv = {0, 255, 255};    // scroll pulse: red
+static HSV     scroll_hsv = {43, 255, 255};   // pressed keys / scroll pulse: yellow
 static uint8_t led_bright = 255;              // device brightness
 
 // Each opcode assembles a full Razer command from ONE 32-byte RAW HID report,
@@ -532,7 +532,7 @@ static void led_render_frame(void) {
     bool    scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     bool    pulse_red = scrolling && ((timer_read32() / scroll_half) & 1);
     uint8_t want[TARTARUS_RGB_KEYS][3];
-    RGB     base   = hsv_to_rgb(base_hsv);
+    RGB     base   = hsv_to_rgb(dictating ? dict_hsv : base_hsv);
     RGB     accent = hsv_to_rgb(scroll_hsv);
 
     for (uint8_t k = 0; k < TARTARUS_RGB_KEYS; k++) {
@@ -577,7 +577,16 @@ static void led_apply(void) {
         return;
     }
 
-    // DICTATE overrides everything: all keys in the dictate colour.
+    // Default mode (idle_fx == 0): per-key reactive frames. Baseline in the
+    // idle colour (dictate colour while dictating, so pressed keys stay
+    // visible), held keys in the accent colour, pulse on the scroll key.
+    if (idle_fx == 0) {
+        led_applied = dictating ? LST_DICT : LST_IDLE;
+        led_render_frame();
+        return;
+    }
+
+    // Native idle effect selected: dictate shows as a static wash.
     if (dictating) {
         if (led_applied != LST_DICT) {
             led_applied = LST_DICT;
@@ -585,14 +594,6 @@ static void led_apply(void) {
             RGB d = hsv_to_rgb(dict_hsv);
             tartarus_rgb_static(d.r, d.g, d.b);
         }
-        return;
-    }
-
-    // Default mode (idle_fx == 0): per-key reactive frames. Baseline in the
-    // idle colour, held keys in the accent colour, pulse on the scroll key.
-    if (idle_fx == 0) {
-        led_applied = LST_IDLE;
-        led_render_frame();
         return;
     }
 
@@ -693,7 +694,7 @@ static void macro_seed_defaults(void) {
 // save apart from a zeroed block, so compiled defaults survive a fresh
 // EEPROM. Writes go through the wear-leveling backing store, which parks
 // core 1 across the flash op (see matrix.c).
-#define TRGB_CFG_VERSION 1
+#define TRGB_CFG_VERSION 2
 
 typedef struct PACKED {
     uint8_t version;   // TRGB_CFG_VERSION; anything else => treat as absent
