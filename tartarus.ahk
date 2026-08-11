@@ -32,6 +32,13 @@
 ;└────────────┴────────────┴────────────┴────────────┴────────────┘
 ;
 ; CHANGE LOG:
+; 2026-08-10 - LED feedback for the tartarus2_ahk converter firmware:
+;              dictation (^F21 / ^!d) turns all keys red while active;
+;              continuous-scroll toggles pulse the initiating key at
+;              the scroll speed. Sent over RAW HID via hidapitester
+;              (put hidapitester.exe next to this script). Silently
+;              does nothing if the converter/tool is absent, so this
+;              script still works with the old firmware.
 ; 2026-07-15 - D-PAD: all 4 directions changed to send Alt+M to
 ;              Centricity RA1000. Previously: L/R = Fast Scroll
 ;              Up/Down toggle, U/D = Slow Scroll Up/Down toggle.
@@ -104,6 +111,41 @@ currentScrollAmount := 0
 ; Global mouse toggle state
 Toggle := false
 
+; ===== CONVERTER LED FEEDBACK (tartarus2_ahk firmware) =====
+; Drives the Tartarus backlight over RAW HID: dictation = all keys red,
+; continuous scroll = the initiating key pulses at the scroll speed.
+; Transport is hidapitester.exe, expected NEXT TO THIS SCRIPT. Everything
+; here no-ops silently if the tool or converter is absent.
+global TartarusHidTester := A_ScriptDir . "\hidapitester.exe"
+global dictateLED := false   ; our local notion of PowerScribe dictate state
+
+_TartarusSend(bytes) {
+    global TartarusHidTester
+    if !FileExist(TartarusHidTester)
+        return
+    payload := "0"
+    for b in bytes
+        payload .= "," . b
+    loop 32 - bytes.Length
+        payload .= ",0"
+    try Run(Format('"{1}" --vidpid 239A:0001 --usagePage 0xFF60 --usage 0x61 --open --length 33 --send-output {2}',
+        TartarusHidTester, payload), , "Hide")
+}
+
+; All keys red while dictating (opcode 0xC8)
+TartarusDictateLED(on) {
+    _TartarusSend([0xC8, on ? 1 : 0])
+}
+
+; Pulse physical key 1..20 while scrolling; halfMs = pulse half-period,
+; matched to the wheel delay so fast scroll pulses fast (opcode 0xC9)
+TartarusScrollLED(on, keyNumber := 0, halfMs := 300) {
+    if (on && keyNumber >= 1 && keyNumber <= 20)
+        _TartarusSend([0xC9, 1, keyNumber - 1, Floor(halfMs / 10)])
+    else
+        _TartarusSend([0xC9, 0, 0, 0])
+}
+
 ; ===== HELPER FUNCTIONS =====
 
 ; Activate Centricity
@@ -174,11 +216,12 @@ StopScroll() {
         ; Stop both timer types using function names directly
         SetTimer(WheelScrollTimer, 0)
         SetTimer(AltWheelScrollTimer, 0)
+        TartarusScrollLED(false)   ; stop the key pulse
     }
 }
 
-; Start wheel scrolling
-ToggleWheelScroll(direction, speed) {
+; Start wheel scrolling (keyNum = physical key 1..20, pulses while scrolling)
+ToggleWheelScroll(direction, speed, keyNum := 0) {
     global scrolling, currentScrollDirection, currentScrollSpeed, wheelSlowDelay, wheelFastDelay
 
     ; If already scrolling, stop it (toggle behavior)
@@ -195,10 +238,12 @@ ToggleWheelScroll(direction, speed) {
     ; Set delay and start timer using function name directly
     delay := (speed == "slow") ? wheelSlowDelay : wheelFastDelay
     SetTimer(WheelScrollTimer, delay)
+    if (keyNum >= 1)
+        TartarusScrollLED(true, keyNum, delay)   ; pulse at the scroll speed
 }
 
 ; Start alt wheel scrolling (different speeds)
-ToggleAltWheelScroll(direction, speed) {
+ToggleAltWheelScroll(direction, speed, keyNum := 0) {
     global scrolling, currentScrollDirection, currentScrollSpeed, altWheelSlowDelay, altWheelFastDelay
 
     ; If already scrolling, stop it (toggle behavior)
@@ -215,6 +260,8 @@ ToggleAltWheelScroll(direction, speed) {
     ; Set delay and start timer using function name directly
     delay := (speed == "slow") ? altWheelSlowDelay : altWheelFastDelay
     SetTimer(AltWheelScrollTimer, delay)
+    if (keyNum >= 1)
+        TartarusScrollLED(true, keyNum, delay)   ; pulse at the scroll speed
 }
 
 ; ===== TARTARUS KEY MAPPINGS (Positions 1-20) =====
@@ -357,11 +404,11 @@ F19:: {
 
 ; 08 Scroll back slow (Base: Wheel Version 1)
 F20:: {
-    ToggleWheelScroll("back", "slow")
+    ToggleWheelScroll("back", "slow", 8)
 }
 ; Alt-08: Scroll back slower (Alt: 400ms)
 !F20:: {
-    ToggleAltWheelScroll("back", "slow")
+    ToggleAltWheelScroll("back", "slow", 8)
 }
 
 ; 09 WL Brain
@@ -408,29 +455,29 @@ F23:: {
 
 ; 12 Scroll back fast (Base: Wheel Version 1)
 F24:: {
-    ToggleWheelScroll("back", "fast")
+    ToggleWheelScroll("back", "fast", 12)
 }
 ; Alt-12: Scroll back faster (Alt: 125ms)
 !F24:: {
-    ToggleAltWheelScroll("back", "fast")
+    ToggleAltWheelScroll("back", "fast", 12)
 }
 
 ; 13: Scroll forward slow (Base: Wheel Version 1)
 ^F13:: {
-    ToggleWheelScroll("forward", "slow")
+    ToggleWheelScroll("forward", "slow", 13)
 }
 ; Alt-13: Scroll forward slower (Alt: 400ms)
 !^F13:: {
-    ToggleAltWheelScroll("forward", "slow")
+    ToggleAltWheelScroll("forward", "slow", 13)
 }
 
 ; 14: Scroll forward fast (Base: Wheel Version 1)
 ^F14:: {
-    ToggleWheelScroll("forward", "fast")
+    ToggleWheelScroll("forward", "fast", 14)
 }
 ; Alt-14: Scroll forward faster (Alt: 125ms)
 !^F14:: {
-    ToggleAltWheelScroll("forward", "fast")
+    ToggleAltWheelScroll("forward", "fast", 14)
 }
 
 ; 15: Measure
@@ -497,18 +544,24 @@ F24:: {
     }
 }
 
-; 20: PowerScribe F4
+; 20: PowerScribe F4 (dictate toggle -> keys go red while dictating)
 ^F21:: {
+    global dictateLED
     StopScroll()  ; Stop any active scrolling first
     ActivatePowerScribe()
     Send("{F4}")
+    dictateLED := !dictateLED
+    TartarusDictateLED(dictateLED)
 }
 
 ; Ctrl+Alt+D: Same as Position 20 (PowerScribe F4)
 ^!d:: {
+    global dictateLED
     StopScroll()  ; Stop any active scrolling first
     ActivatePowerScribe()
     Send("{F4}")
+    dictateLED := !dictateLED
+    TartarusDictateLED(dictateLED)
 }
 ; Alt-20: TBD
 !^F21:: {
