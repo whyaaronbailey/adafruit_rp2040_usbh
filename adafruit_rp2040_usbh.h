@@ -55,3 +55,10 @@ extern volatile uint16_t razer_cb_count;        // completed vendor SET_REPORTs 
 // descriptor size (control interface has the largest, ~186 bytes).
 extern volatile uint16_t razer_inst_desclen[8];
 extern volatile uint8_t  razer_inst_proto[8];
+
+// Input-path diagnostics (matrix.c): total HID reports received from the
+// attached device, reports from the keyboard interface, and the first bytes
+// of the most recent keyboard report.
+extern volatile uint16_t diag_rx_all;
+extern volatile uint16_t diag_rx_kbd;
+extern volatile uint8_t  diag_last_kbd[4];

@@ -25,7 +25,7 @@ SRC += color.c
 
 TAP_DANCE_ENABLE = no
 COMBO_ENABLE = NO
-NKRO_ENABLE = yes
+NKRO_ENABLE = no
 DEFERRED_EXEC_ENABLE = yes
 
 # RAW HID: the only host->firmware channel that works from the dev box (keyboard

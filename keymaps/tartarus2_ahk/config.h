@@ -6,7 +6,7 @@
 
 #define NO_DEBUG
 #define NO_PRINT
-#define FORCE_NKRO
+// #define FORCE_NKRO  // disabled: NKRO-over-shared-EP dropped keycodes on Windows
 #define TAPPING_TERM 300
 
 // VIA dynamic keymaps: the virtual matrix is 32x8 = 256 positions, so each

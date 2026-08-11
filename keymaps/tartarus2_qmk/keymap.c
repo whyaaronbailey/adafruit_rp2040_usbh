@@ -51,6 +51,7 @@ static void rz_send(uint8_t *b) {
 
 static void led_set_idle_fx(uint8_t idx);  // defined with the LED state block below
 static uint32_t held_mask = 0;             // bit n = LED n's key is physically down
+static volatile uint16_t key_event_count = 0;  // QMK key events since boot (diag)
 static void led_force_reapply(void);       // resend current LED state to the device
 
 // Host-driven LED state (AHK model): scrolling logic lives in AutoHotkey, so
@@ -187,6 +188,27 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
             resp[4] = (uint8_t)(hb >> 16);
             resp[5] = (uint8_t)(hb >> 24);
             raw_hid_send(resp, sizeof(resp));
+            break;
+        }
+
+        case 0xD4: {  // input-path diag: [rx_all u16, rx_kbd u16, qmk_events u16, last_kbd 4B, any_down]
+            uint8_t resp[32] = {0};
+            resp[0] = 0xD4;
+            resp[1] = (uint8_t)(diag_rx_all & 0xFF);  resp[2] = (uint8_t)(diag_rx_all >> 8);
+            resp[3] = (uint8_t)(diag_rx_kbd & 0xFF);  resp[4] = (uint8_t)(diag_rx_kbd >> 8);
+            resp[5] = (uint8_t)(key_event_count & 0xFF); resp[6] = (uint8_t)(key_event_count >> 8);
+            resp[7] = diag_last_kbd[0]; resp[8] = diag_last_kbd[1];
+            resp[9] = diag_last_kbd[2]; resp[10] = diag_last_kbd[3];
+            uint8_t any = 0;
+            for (uint8_t r = 0; r < MATRIX_ROWS; r++) { if (matrix_get_row(r)) any = 1; }
+            resp[11] = any;
+            raw_hid_send(resp, sizeof(resp));
+            break;
+        }
+
+        case 0xD5: {  // self-type: [0xD5, kc_lo, kc_hi] -> firmware taps the keycode
+            uint16_t kc = (uint16_t)data[1] | ((uint16_t)data[2] << 8);
+            tap_code16(kc);
             break;
         }
 
@@ -770,6 +792,8 @@ void housekeeping_task_user(void) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+    key_event_count++;  // input-path diagnostic (0xD4)
 
     // Track physical key state for the reactive frame mode: a held key shows
     // red, reverting on release. Applies to every key that has an LED.

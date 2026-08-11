@@ -337,8 +337,22 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
     kbd_instance        = 0;
 }
 
+// Input-path diagnostics: how many HID reports the host stack has received
+// in total, how many came from the keyboard interface specifically, and the
+// first bytes of the most recent keyboard report. Read via RAW HID 0xD4.
+volatile uint16_t diag_rx_all = 0;
+volatile uint16_t diag_rx_kbd = 0;
+volatile uint8_t  diag_last_kbd[4] = {0};
+
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len) {
     dprintf("Report received\n");
+    diag_rx_all++;
+    if (dev_addr == kbd_addr && instance == kbd_instance) {
+        diag_rx_kbd++;
+        for (uint8_t i = 0; i < 4 && i < len; i++) {
+            diag_last_kbd[i] = report[i];
+        }
+    }
     if (led_count < 0) {
         led_count = timer_read();
     }
