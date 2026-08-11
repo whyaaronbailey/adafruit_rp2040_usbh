@@ -501,7 +501,7 @@ static void led_set_idle_fx(uint8_t idx) {
     frame_valid = false;     // the device no longer shows our last frame
 }
 
-__attribute__((unused)) static void led_render_frame(void) {
+static void led_render_frame(void) {
     bool    scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     bool    pulse_red = scrolling && ((timer_read32() / scroll_half) & 1);
     uint8_t want[TARTARUS_RGB_KEYS][3];
@@ -566,11 +566,18 @@ static void led_apply(void) {
         return;
     }
 
-    // All idle effects (including 0 = static idle colour) are NATIVE device
-    // effects: they never enter driver mode, so the keyboard keeps working.
-    // Per-key custom frames (led_render_frame) are deliberately NOT used here —
-    // driver mode suppresses the Tartarus's key reports. Edge-triggered;
-    // scrolling shows a whole-pad breathing pulse in the accent colour.
+    // Default mode (idle_fx == 0): per-key reactive frames — baseline in the
+    // idle colour, held keys in the accent colour, scroll pulse on the
+    // initiating key. Custom frames are verified to work in NORMAL device
+    // mode (driver mode is never entered — it would kill the keyboard).
+    if (idle_fx == 0) {
+        led_applied = LST_IDLE;
+        led_render_frame();
+        return;
+    }
+
+    // A native idle effect is selected: edge-triggered; scrolling shows a
+    // whole-pad breathing pulse in the accent colour.
     bool        scrolling = (token != INVALID_DEFERRED_TOKEN) || host_scroll;
     led_state_t want      = scrolling ? LST_SCROLL : LST_IDLE;
     if (want == led_applied) {
