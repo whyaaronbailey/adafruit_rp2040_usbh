@@ -18,6 +18,9 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
         case 0xB0:  // reflash: drop to the UF2 bootloader
             bootloader_jump();
             break;
+        case 0xB1:  // ping: echo the buffer back to prove the raw path works
+            raw_hid_send(data, length);
+            break;
         case 0xD6:  // fire PowerMic button: [0xD6, button, down]
             if (data[2]) {
                 powermic_button_press(data[1]);
@@ -30,7 +33,31 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     }
 }
 
+// Bootloader chord: keys 01 + 05 + 20 held together drop to the UF2
+// bootloader from the keypad itself, so a build with a broken raw-HID path
+// can still be reflashed without touching the BOOTSEL button.
+static uint8_t boot_chord = 0;
+
+static void boot_chord_track(uint16_t keycode, bool pressed) {
+    uint8_t bit;
+    switch (keycode) {
+        case KC_F13:  bit = 1 << 0; break;  // key 01
+        case KC_F17:  bit = 1 << 1; break;  // key 05
+        case PM_DICT: bit = 1 << 2; break;  // key 20
+        default: return;
+    }
+    if (pressed) {
+        boot_chord |= bit;
+        if (boot_chord == 0b111) {
+            bootloader_jump();
+        }
+    } else {
+        boot_chord &= ~bit;
+    }
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    boot_chord_track(keycode, record->event.pressed);
     if (keycode == PM_DICT) {
         if (record->event.pressed) {
             powermic_button_press(PM_DICTATE);
