@@ -1,0 +1,46 @@
+# Trimmed for PowerScribe: every generic-HID interface under our 0554:1001 VID/PID
+# shows up as a candidate "PowerMic" in PowerScribe's device list. Drop extrakey
+# (system+consumer HID), console, and the CDC serial so only TWO HID interfaces
+# remain: VIA's raw-HID (unavoidable - VIA needs it) and the real PowerMic. Select
+# the PowerMic one in PowerScribe's Device Preferences.
+EXTRAKEY_ENABLE = no
+CONSOLE_ENABLE = no
+COMMAND_ENABLE = no
+VIRTSER_ENABLE = no
+MOUSEKEY_ENABLE = yes
+
+# PowerMic II button emulation. QMK's joystick interface is used purely as a
+# transport: with 0 axes and 24 buttons it produces a buttons-only 3-byte
+# report on the Button usage page, on its own HID interface and endpoint, so
+# the keyboard and mouse interfaces are untouched.
+JOYSTICK_ENABLE = yes
+# Required: EXTRAKEY/MOUSE already enable the shared endpoint, which would
+# otherwise force the joystick onto it behind a REPORT_ID. The PowerMic report
+# must reach the wire as bare bytes.
+JOYSTICK_OWN_EP = yes
+# Also required, for a structural reason in usb_descriptor.c: with the default
+# MOUSE_SHARED_EP = yes, the SharedReport[] array is opened at the mouse block
+# and stays open past the joystick block, so a standalone JoystickReport[]
+# cannot be declared there. Giving the mouse its own endpoint defers
+# SharedReport[] to the extrakey/NKRO section, after the joystick.
+# The mouse keeps working; it just loses its REPORT_ID prefix and gains an EP.
+MOUSE_SHARED_EP = no
+SRC += powermic.c
+# Generalizable Razer Tartarus RGB driver (OpenRazer-derived, GPL-2.0).
+SRC += tartarus_rgb.c
+# hsv_to_rgb for the VIA colour pickers (not pulled in without an RGB feature).
+SRC += color.c
+
+TAP_DANCE_ENABLE = no
+COMBO_ENABLE = NO
+NKRO_ENABLE = no
+DEFERRED_EXEC_ENABLE = yes
+
+# RAW HID: the only host->firmware channel that works from the dev box (keyboard
+# injection is blocked there). Carries the reflash trigger and the Razer command
+# relay for bench-testing LED control.
+RAW_ENABLE = yes
+
+# VIA: graphical remapping + custom "Lighting" menus in usevia.app. The bench
+# opcodes coexist with the VIA protocol via via_command_kb (ids >= 0xB0).
+VIA_ENABLE = yes

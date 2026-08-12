@@ -1,0 +1,122 @@
+{
+  "name": "Tartarus PowerMic (VIA + PowerScribe)",
+  "vendorId": "0x0554",
+  "productId": "0x1001",
+  "matrix": { "rows": 32, "cols": 8 },
+  "customKeycodes": [
+    { "name": "Dictate", "title": "PowerMic dictate toggle (LEDs turn red)", "shortName": "DICT" },
+    { "name": "Scroll Up", "title": "Continuous scroll up (toggle; key pulses while active)", "shortName": "SCR+" },
+    { "name": "Scroll Down", "title": "Continuous scroll down (toggle; key pulses while active)", "shortName": "SCR-" },
+    { "name": "Fast Up", "title": "Fast continuous scroll up (toggle)", "shortName": "FST+" },
+    { "name": "Fast Down", "title": "Fast continuous scroll down (toggle)", "shortName": "FST-" },
+    { "name": "LED FX Next", "title": "Next idle LED effect", "shortName": "FX+" },
+    { "name": "LED FX Prev", "title": "Previous idle LED effect", "shortName": "FX-" },
+    { "name": "Annotate", "title": "Annotation tool - runs macro M15, edit in Macros pane (default: key 01)", "shortName": "ANNO" },
+    { "name": "WL Soft", "title": "Window/level soft tissue - runs M4 (default: key 02)", "shortName": "SOFT" },
+    { "name": "WL Lung", "title": "Window/level lung - runs M8 (default: key 03)", "shortName": "LUNG" },
+    { "name": "WL Vascular", "title": "Window/level vascular - runs M10 (default: key 04)", "shortName": "VASC" },
+    { "name": "Zoom", "title": "Zoom tool - runs M13 (default: key 05)", "shortName": "ZOOM" },
+    { "name": "Open Epic", "title": "Open patient in Epic - runs M2 (default: key 06)", "shortName": "EPIC" },
+    { "name": "WL Bone", "title": "Window/level bone - runs M5 (default: key 07)", "shortName": "BONE" },
+    { "name": "WL Brain", "title": "Window/level brain - runs M6 (default: key 09)", "shortName": "BRAIN" },
+    { "name": "Arrow", "title": "Arrow tool - runs M12 (default: key 10)", "shortName": "ARRW" },
+    { "name": "Copy Accession", "title": "Copy accession number - runs M0 (default: key 11)", "shortName": "COPY" },
+    { "name": "Measure", "title": "Measure tool - runs M14 (default: key 15)", "shortName": "MEAS" },
+    { "name": "Open GE", "title": "Open study in GE PACS - runs M1 (default: key 16)", "shortName": "GE" },
+    { "name": "Spine C", "title": "Spine label cervical - runs M20 (default: key 17)", "shortName": "SP-C" },
+    { "name": "Spine T", "title": "Spine label thoracic - runs M21 (default: key 18)", "shortName": "SP-T" },
+    { "name": "Spine L", "title": "Spine label lumbar - runs M22 (default: key 19)", "shortName": "SP-L" },
+    { "name": "Interzoom", "title": "Interactive zoom - runs M18 (default: layer 1 key 05)", "shortName": "IZM" },
+    { "name": "WL Hardware", "title": "Window/level hardware - runs M9 (default: layer 1 key 07)", "shortName": "HDWR" },
+    { "name": "WL Stroke", "title": "Window/level stroke - runs M7 (default: layer 1 key 09)", "shortName": "STRK" },
+    { "name": "Ellipse", "title": "Ellipse ROI - runs M16 (default: layer 1 key 10)", "shortName": "ELLP" },
+    { "name": "ROI", "title": "ROI tool - runs M17 (default: layer 1 key 15)", "shortName": "ROI" },
+    { "name": "McKesson", "title": "Open study in McKesson - runs M3 (default: layer 1 key 16)", "shortName": "MCK" },
+    { "name": "Hang", "title": "Hanging protocol - runs M19 (unassigned by default)", "shortName": "HANG" },
+    { "name": "WL Subdural", "title": "Window/level subdural - runs M11 (unassigned by default)", "shortName": "SUBD" },
+    { "name": "Dictate (AHK)", "title": "Sends Ctrl+F21 for AutoHotkey/PowerScribe and toggles the red dictate LEDs", "shortName": "DICT*" },
+    { "name": "PM Transcribe", "title": "PowerMic Button 1 (Transcribe), focus-independent", "shortName": "TRSC" },
+    { "name": "PM Tab Back", "title": "PowerMic Button 2 (Tab backward)", "shortName": "PMTB" },
+    { "name": "PM Tab Fwd", "title": "PowerMic Button 4 (Tab forward)", "shortName": "PMTF" },
+    { "name": "PM Rewind", "title": "PowerMic Button 5 (Rewind)", "shortName": "REW" },
+    { "name": "PM Fast Fwd", "title": "PowerMic Button 6 (Fast forward)", "shortName": "FFWD" },
+    { "name": "PM Stop/Play", "title": "PowerMic Button 7 (Stop/Play)", "shortName": "PLAY" },
+    { "name": "PM Custom Left", "title": "PowerMic Button 8 (Custom left)", "shortName": "PM-L" },
+    { "name": "PM Enter/Select", "title": "PowerMic Button 9 (Enter/Select)", "shortName": "ENTR" },
+    { "name": "PM Custom Right", "title": "PowerMic Button 10 (Custom right)", "shortName": "PM-R" }
+  ],
+  "menus": [
+    {
+      "label": "Lighting",
+      "content": [
+        {
+          "label": "Tartarus LEDs",
+          "content": [
+            {
+              "label": "Idle Effect",
+              "type": "dropdown",
+              "options": [
+                ["Static (idle colour)", 0],
+                ["Spectrum cycle", 1],
+                ["Rainbow wave", 2],
+                ["Color wheel", 3],
+                ["Breathing (blue)", 4],
+                ["Breathing (blue/purple)", 5],
+                ["Breathing (random)", 6],
+                ["Starlight (blue)", 7],
+                ["Starlight (blue/white)", 8],
+                ["Starlight (random)", 9],
+                ["Reactive (cyan flash)", 10]
+              ],
+              "content": ["id_trgb_idle_fx", 6, 1]
+            },
+            {
+              "label": "Idle Color",
+              "type": "color",
+              "content": ["id_trgb_base_color", 6, 2]
+            },
+            {
+              "label": "Dictate Color",
+              "type": "color",
+              "content": ["id_trgb_dict_color", 6, 3]
+            },
+            {
+              "label": "Pressed-key / Pulse Color",
+              "type": "color",
+              "content": ["id_trgb_scroll_color", 6, 4]
+            },
+            {
+              "label": "Brightness",
+              "type": "range",
+              "options": [0, 255],
+              "content": ["id_trgb_brightness", 6, 5]
+            },
+            {
+              "label": "Slow scroll interval (x10 ms)",
+              "type": "range",
+              "options": [10, 60],
+              "content": ["id_trgb_speed_slow", 6, 6]
+            },
+            {
+              "label": "Fast scroll interval (x10 ms)",
+              "type": "range",
+              "options": [8, 30],
+              "content": ["id_trgb_speed_fast", 6, 7]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "layouts": {
+    "keymap": [
+      ["3,6", "3,7", "4,0", "4,1", "4,2", { "x": 0.5 }, "28,2"],
+      ["5,3", "2,4", "3,2", "1,0", "2,5", { "x": 0.5 }, "13,1"],
+      ["7,1", "0,4", "2,6", "0,7", "1,1", { "x": 0.5 }, "13,0"],
+      ["28,1", "3,5", "3,3", "0,6", { "w": 2 }, "5,4"],
+      [{ "y": 0.5, "x": 1 }, "10,2"],
+      [{ "x": 0 }, "10,0", { "x": 1 }, "9,7"],
+      [{ "x": 1 }, "10,1"]
+    ]
+  }
+}
