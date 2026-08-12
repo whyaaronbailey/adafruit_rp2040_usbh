@@ -35,13 +35,22 @@ static void boot_chord_track(uint16_t keycode, bool pressed) {
     }
 }
 
+// Dictate is latched (toggle): one tap starts dictation and HOLDS the PowerMic
+// Dictate button down; the next tap releases it. PowerScribe is in press-to-hold
+// mode, so a held button = continuous dictation - which makes a single tap
+// start/stop, i.e. toggle, with nothing to configure host-side.
+static bool dictate_latched = false;
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     boot_chord_track(keycode, record->event.pressed);
     if (keycode == PM_DICT) {
-        if (record->event.pressed) {
-            powermic_button_press(PM_DICTATE);
-        } else {
-            powermic_button_release(PM_DICTATE);
+        if (record->event.pressed) {   // act on the tap; ignore the physical release
+            dictate_latched = !dictate_latched;
+            if (dictate_latched) {
+                powermic_button_press(PM_DICTATE);
+            } else {
+                powermic_button_release(PM_DICTATE);
+            }
         }
         return false;
     }
