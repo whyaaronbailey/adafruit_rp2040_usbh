@@ -1,37 +1,16 @@
-// Minimal PowerMic-emulation test keymap. Goal: present the PowerMic HID button
-// interface at USB interface number 3 (MI_03), matching a genuine PowerMic, so
-// PowerScribe/usbmgr reads it. Keys are the production F-codes; key 20 fires the
-// real PowerMic Dictate button (Button 3). RAW HID carries the reflash trigger
-// and a bench opcode to fire any PowerMic button.
+// PowerMic-emulation keymap. Presents ONE clean PowerMic HID button interface so
+// PowerScribe's HID manager binds it unambiguously (no raw-HID interface sharing
+// our VID/PID as a second candidate). Keys are the production F-codes; key 20
+// fires the real PowerMic Dictate button (Button 3). Reflash without BOOTSEL is
+// still available two ways: the EP0 feature-report hatch (usb_main.c, on the
+// PowerMic interface) and the 01+05+20 keypad chord below.
 #include QMK_KEYBOARD_H
 #include "joystick.h"
 #include "powermic.h"
-#include "raw_hid.h"
 
 enum custom_keycodes {
     PM_DICT = QK_KB_0,  // PowerMic Dictate (Button 3)
 };
-
-void raw_hid_receive(uint8_t *data, uint8_t length) {
-    if (length < 1) return;
-    switch (data[0]) {
-        case 0xB0:  // reflash: drop to the UF2 bootloader
-            bootloader_jump();
-            break;
-        case 0xB1:  // ping: echo the buffer back to prove the raw path works
-            raw_hid_send(data, length);
-            break;
-        case 0xD6:  // fire PowerMic button: [0xD6, button, down]
-            if (data[2]) {
-                powermic_button_press(data[1]);
-            } else {
-                powermic_button_release(data[1]);
-            }
-            break;
-        default:
-            break;
-    }
-}
 
 // Bootloader chord: keys 01 + 05 + 20 held together drop to the UF2
 // bootloader from the keypad itself, so a build with a broken raw-HID path

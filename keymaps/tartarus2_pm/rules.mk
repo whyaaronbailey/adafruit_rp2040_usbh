@@ -1,5 +1,9 @@
-# Minimal PowerMic-emulation build: get the PowerMic HID onto interface 3.
-# Interface order (QMK): keyboard(0), RAW(1), MOUSE(2), JOYSTICK(3).
+# Clean PowerMic-emulation build: present exactly ONE PowerMic HID interface so
+# PowerScribe's HID manager binds it unambiguously. RAW_ENABLE is OFF - a raw-HID
+# interface shares our 0554:1001 VID/PID and PowerScribe's scanner grabbed it as a
+# second "PowerMic" candidate (verified via its own HIDManager). The PowerMic HID
+# still claims EP 0x81 (usb_descriptor.h reassigns JOYSTICK_IN_EPNUM ahead of the
+# keyboard when POWERMIC_HID_DESC is defined).
 EXTRAKEY_ENABLE = no
 MOUSEKEY_ENABLE = yes
 NKRO_ENABLE = no
@@ -13,7 +17,7 @@ JOYSTICK_ENABLE = yes
 JOYSTICK_OWN_EP = yes
 MOUSE_SHARED_EP = no
 
-RAW_ENABLE = yes
+RAW_ENABLE = no
 DEFERRED_EXEC_ENABLE = yes
 SRC += powermic.c
 
