@@ -84,3 +84,10 @@
 #define DEVICE_VER   0x0143
 #define MANUFACTURER "Nuance"
 #define PRODUCT      "PowerMicII-NS"
+
+// Put the PowerMic HID on endpoint 0x81, as the genuine device does (its itf3
+// HID is EP 0x81 IN). The build that PowerScribe actually accepted at the
+// workstation had this; the earlier reason for dropping it (suspected TX
+// breakage on multi-endpoint builds) was a misdiagnosis - that was the missing
+// 0x00 report-ID prefix on raw-HID output reports.
+#define POWERMIC_FORCE_EP1
