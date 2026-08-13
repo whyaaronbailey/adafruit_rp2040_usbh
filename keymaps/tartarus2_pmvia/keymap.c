@@ -220,6 +220,21 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
             }
             break;
 
+        case 0xD7: {  // simulate a physical key: [0xD7, row, col, down]
+            // Injects a real matrix event, so QMK resolves the keycode from the
+            // live (VIA/EEPROM) keymap and runs process_record exactly as a
+            // finger would. tap_code16 cannot do this: it only handles basic
+            // keycodes, so custom ones (DICTATE, PM_K_*) never reach their
+            // handler. Key 20 = [5,4], thumb left = [10,0], right = [9,7].
+            extern volatile uint8_t kq_inject_row, kq_inject_col, kq_inject_down;
+            extern volatile bool    kq_inject_pending;
+            kq_inject_row     = data[1];
+            kq_inject_col     = data[2];
+            kq_inject_down    = data[3];
+            kq_inject_pending = true;  // applied by matrix_scan_custom
+            break;
+        }
+
         case 0xC4:  // set device mode: [0xC4, mode]   (0x03 = driver mode)
             rz_zero(b);
             b[5] = 0x02; b[6] = 0x00; b[7] = 0x04; b[8] = data[1]; b[9] = 0x00;
@@ -392,7 +407,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                   KC_TRNS,     KC_TRNS,     KC_LALT,    DICTATE,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    LEFT    â”‚    RIGHT        UP      â”‚    DOWN   â”‚ */
-                S(KC_F13),   S(KC_F14),   S(KC_F15),   S(KC_F16)
+                /* thumb LEFT = PowerScribe previous field (PowerMic Tab Back),
+                   thumb RIGHT = next field (Tab Forward); up/down keep AHK codes */
+             PM_K_TABBACK, PM_K_TABFWD,   S(KC_F15),   S(KC_F16)
             /*â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜*/
     ),
     
@@ -742,9 +759,16 @@ static void trgb_settings_load(void) {
 
 void keyboard_post_init_user(void) {
     macro_seed_defaults();
+#ifndef PMVIA_TRANSIENT_EEPROM
+    // Only meaningful when the store is in FLASH: that first boot's mass writes
+    // cut XIP under core 1 and kill the USB host for that boot. With a RAM store
+    // there are no flash writes at all - and since a RAM store is blank on EVERY
+    // boot, healing here would soft-reset forever and the device would never
+    // enumerate (observed: board vanished from USB until BOOTSEL recovery).
     if (eeprom_was_reset) {
         soft_reset_keyboard();  // fresh-EEPROM heal: reboots, never returns
     }
+#endif
     trgb_settings_load();
 }
 
@@ -863,15 +887,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
 
 		case DICTATE:
-			// Latched toggle: one tap starts dictation and HOLDS the PowerMic
-			// Dictate button down; the next tap releases it. PowerScribe runs the
-			// record button as press-to-hold, so a held button = continuous
-			// dictation - making a single tap start/stop. The Button-page report
-			// is delivered by Raw Input regardless of window focus, so no AHK.
+			// Was SS_TAP(X_F13): a keyboard scan code, so it only reached
+			// PowerScribe when PowerScribe had focus, which is what forced the
+			// AHK WinActivate helper. Now emits the PowerMic's own Button-page
+			// report instead, which Raw Input delivers regardless of focus.
 			if (record->event.pressed) {
-				dictating = !dictating;   // also drives the red dictation LED
-				if (dictating) powermic_button_press(PM_DICTATE);
-				else           powermic_button_release(PM_DICTATE);
+				powermic_button_press(PM_DICTATE);
+				dictating = !dictating;   // toggle dictation LED state
+			} else {
+				powermic_button_release(PM_DICTATE);
 			}
 		return false;
 

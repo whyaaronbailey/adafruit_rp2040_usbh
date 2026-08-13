@@ -4,6 +4,8 @@
 #pragma weak backing_store_lock
 #pragma weak backing_store_unlock
 
+// Guarded: with CONSOLE_ENABLE = no, QMK already defines both, and a bare
+// redefine trips -Werror.
 #ifndef NO_DEBUG
 #define NO_DEBUG
 #endif
@@ -59,6 +61,26 @@
 #define MOUSEKEY_TIME_TO_MAX 60
 #define MOUSEKEY_MAX_SPEED 8
 #define MOUSEKEY_WHEEL_DELAY 0
-// Present the joystick interface as a real PowerMic (usage 0, 64-byte
-// descriptor, EP 0x81) so PowerScribe's HID manager recognizes it.
+// ---- PowerMic emulation delta (this keymap = tartarus2_ahk + these lines) ----
+// Present the joystick interface with the genuine 64-byte PowerMic II report
+// descriptor. Everything else (interfaces, EEPROM, LEDs, VIA) stays exactly as
+// the production ahk build, which is known to bring core 1 up reliably.
+// NOTE: deliberately NO POWERMIC_FORCE_EP1 and no interface trimming - Nuance
+// matches on VID/PID + usagePage 1/usage 0 only, never endpoint or interface
+// number (proven against PowerScribe's own HIDManager and the dictation_support
+// SDK), so the shape that keeps the converter healthy wins.
 #define POWERMIC_HID_DESC
+
+// PowerMic II identity. Self-contained here so it does not depend on the shared
+// keyboard info.json (which stays 239A:0001 for the other builds). #undef first:
+// the info.json-generated defines land earlier in the TU and would -Werror.
+#undef VENDOR_ID
+#undef PRODUCT_ID
+#undef DEVICE_VER
+#undef MANUFACTURER
+#undef PRODUCT
+#define VENDOR_ID    0x0554
+#define PRODUCT_ID   0x1001
+#define DEVICE_VER   0x0143
+#define MANUFACTURER "Nuance"
+#define PRODUCT      "PowerMicII-NS"

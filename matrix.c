@@ -48,8 +48,35 @@ void matrix_init_custom(void) {
     writePinHigh(KQ_PIN_LED);
 }
 
+// Bench key injection (raw-HID opcode 0xD7). Sets a matrix bit exactly as a
+// parsed HID report would, so the key runs QMK's normal diff -> action_exec ->
+// process_record path, including VIA keymap lookup and custom keycodes. Calling
+// process_record()/action_exec() directly from the raw-HID callback does NOT
+// work here: this converter has no real scan, so the event must enter through
+// the matrix.
+volatile uint8_t kq_inject_row     = 0xFF;
+volatile uint8_t kq_inject_col     = 0;
+volatile uint8_t kq_inject_down    = 0;
+volatile bool    kq_inject_pending = false;
+
 bool matrix_scan_custom(matrix_row_t current_matrix[]) {
     bool matrix_has_changed = false;
+
+    if (kq_inject_pending) {
+        kq_inject_pending = false;
+        if (kq_inject_row < MATRIX_ROWS) {
+            matrix_row_t before = current_matrix[kq_inject_row];
+            matrix_row_t bit    = (matrix_row_t)1 << kq_inject_col;
+            if (kq_inject_down) {
+                current_matrix[kq_inject_row] |= bit;
+            } else {
+                current_matrix[kq_inject_row] &= ~bit;
+            }
+            if (before != current_matrix[kq_inject_row]) {
+                return true;
+            }
+        }
+    }
 
     // If keyboard is disconnected, clear matrix
     if (hid_disconnect_flag) {

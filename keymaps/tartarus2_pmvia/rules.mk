@@ -1,12 +1,4 @@
-# Trimmed for PowerScribe: every generic-HID interface under our 0554:1001 VID/PID
-# shows up as a candidate "PowerMic" in PowerScribe's device list. Drop extrakey
-# (system+consumer HID), console, and the CDC serial so only TWO HID interfaces
-# remain: VIA's raw-HID (unavoidable - VIA needs it) and the real PowerMic. Select
-# the PowerMic one in PowerScribe's Device Preferences.
-EXTRAKEY_ENABLE = no
-CONSOLE_ENABLE = no
-COMMAND_ENABLE = no
-VIRTSER_ENABLE = no
+EXTRAKEY_ENABLE = yes
 MOUSEKEY_ENABLE = yes
 
 # PowerMic II button emulation. QMK's joystick interface is used purely as a
@@ -44,3 +36,13 @@ RAW_ENABLE = yes
 # VIA: graphical remapping + custom "Lighting" menus in usevia.app. The bench
 # opcodes coexist with the VIA protocol via via_command_kb (ids >= 0xB0).
 VIA_ENABLE = yes
+
+# PowerScribe's PowermicCtrl binds the FIRST HID device matching 0554:1001, so
+# every extra generic-HID collection we expose is a decoy that steals the bind
+# (proven with its own HIDManager: it enumerated 5 candidates and the PowerMic
+# was last). Keyboard/mouse are class-exclusive and never offered, but console
+# (usagePage 0xFF31) and extrakey (consumer/system) are - and neither is used by
+# this keymap, which is all F13-F24 plus modifier combos. Dropping them removes
+# two decoys; raw HID stays because VIA needs it.
+CONSOLE_ENABLE = no
+EXTRAKEY_ENABLE = no
