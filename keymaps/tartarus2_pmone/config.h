@@ -103,3 +103,4 @@
 // change under a shared, serial-less ID). This is the VIA-mode serial; PowerMic
 // mode serves its own at string index 3.
 // single-identity integrated build: no per-mode serial needed
+#define POWERMIC_RAW_BUTTONS
