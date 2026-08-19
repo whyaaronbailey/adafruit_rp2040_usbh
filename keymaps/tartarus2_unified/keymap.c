@@ -764,8 +764,12 @@ static void trgb_settings_load(void) {
     dict_hsv.h   = s.dict_h;   dict_hsv.s   = s.dict_s;
     scroll_hsv.h = s.scroll_h; scroll_hsv.s = s.scroll_s;
     led_bright     = s.bright;
-    REP_DELAY      = (uint16_t)s.rep_slow * 10;
-    REP_DELAY_FAST = (uint16_t)s.rep_fast * 10;
+    // Scroll speeds stay at compiled defaults (300/140), like the working
+    // tartarus2_pacs build. A stale version-2 EEPROM block (saved before the
+    // rep_slow/rep_fast fields existed) fed garbage into REP_DELAY_FAST and
+    // killed fast scroll while the LED kept pulsing. Do NOT restore from EEPROM:
+    // REP_DELAY      = (uint16_t)s.rep_slow * 10;
+    // REP_DELAY_FAST = (uint16_t)s.rep_fast * 10;
     led_set_idle_fx(s.idle_fx);  // sets idle_fx and forces a reapply
     led_force_reapply();         // colours (and brightness, via led_apply's
                                  // device-ready path) re-push to the device
