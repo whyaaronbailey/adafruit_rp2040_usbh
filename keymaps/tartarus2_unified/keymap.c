@@ -376,7 +376,15 @@ enum custom_keycodes {
     PM_K_STOPPLAY,      // Button 7
     PM_K_CUSTOML,       // Button 8
     PM_K_ENTERSEL,      // Button 9
-    PM_K_CUSTOMR        // Button 10
+    PM_K_CUSTOMR,       // Button 10
+
+    // Alt-layer scroll (thumb MO(1) + scroll key): same toggles at the AHK
+    // alt-layer speeds - slow keys slower (400ms), fast keys faster (125ms).
+    // Appended at the end so earlier keycode values stay stable in EEPROM.
+    ASCROLLUP,
+    ASCROLLDOWN,
+    AFAST_UP,
+    AFAST_DOWN
 };
 
 // PowerMic button index for each PM_K_* keycode, in enum order.
@@ -416,7 +424,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                 C(KC_F16),   C(KC_F17),   C(KC_F18),   C(KC_F19),
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    SW      â”‚    SC      â”‚    THUMB   â”‚     20     â”‚*/
-                  SCROLLUP,    SCROLLDOWN,  KC_LALT,    DICTATE,
+                  SCROLLUP,    SCROLLDOWN,  MO(1),      DICTATE,
             /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
             /*â”‚    LEFT    â”‚    RIGHT        UP      â”‚    DOWN   â”‚ */
                 /* thumb LEFT = PowerScribe previous field (PowerMic Tab Back),
@@ -426,31 +434,34 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     
     [1] = LAYOUT_tartarus2(
-            /*â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬ */
-            /*â”‚    01      â”‚    02      â”‚    03      â”‚    04      â”‚    05      â”‚ */
-                  KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,
-            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
-            /*â”‚    06      â”‚    07      â”‚    08      â”‚    09      â”‚    10      â”‚*/  
-                  KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,
-            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/
-            /*â”‚    11      â”‚    12      â”‚    13      â”‚    14      â”‚    15      â”‚*/ 
-                  KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,
-            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
-            /*â”‚    16      â”‚    17      â”‚    18      â”‚    19      â”‚*/
-                  KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,
-            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
-            /*â”‚    SW      â”‚    SC      â”‚    THUMB      â”‚    20   â”‚*/
-                  KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS,      
-            /*â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼*/  
-            /*â”‚    LEFT    â”‚    RIGHT   â”‚    UP       â”‚    DOWN   â”‚ */
+            /* Alt layer (thumb MO(1) held). Non-scroll keys emit the exact
+               Alt+F combos the AHK script binds (!F13..!F23, !^F15..!^F21), so
+               every AHK alt-layer function is untouched. Scroll positions run
+               native alt-speed scroll (slow->400ms, fast->125ms) in firmware. */
+            /*     01           02           03           04           05     */
+                A(KC_F13),   A(KC_F14),   A(KC_F15),   A(KC_F16),   A(KC_F17),
+            /*     06           07           08           09           10     */
+                A(KC_F18),   A(KC_F19),   ASCROLLUP,   A(KC_F21),   A(KC_F22),
+            /*     11           12           13           14           15     */
+                A(KC_F23),   AFAST_UP,    ASCROLLDOWN, AFAST_DOWN,  LCA(KC_F15),
+            /*     16           17           18           19                  */
+                LCA(KC_F16), LCA(KC_F17), LCA(KC_F18), LCA(KC_F19),
+            /*     SW           SC           THUMB        20                  */
+                  KC_TRNS,     KC_TRNS,     KC_TRNS,   LCA(KC_F21),
+            /*     LEFT         RIGHT        UP           DOWN                */
                   KC_TRNS,     KC_TRNS,     KC_TRNS,     KC_TRNS
-            /*â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜*/
-        
     )
 };
 
-static uint16_t REP_DELAY = 300; 
-static uint16_t REP_DELAY_FAST = 140; 
+static uint16_t REP_DELAY          = 300;  // base slow continuous-scroll period (ms)
+static uint16_t REP_DELAY_FAST     = 140;  // base fast continuous-scroll period (ms)
+// Thumb (KC_LALT) held + a scroll key = the AHK alt-layer speeds. Slow keys go
+// slower, fast keys go faster - a second speed set, like ToggleAltWheelScroll.
+static uint16_t REP_DELAY_ALT      = 400;  // alt slow
+static uint16_t REP_DELAY_ALT_FAST = 125;  // alt fast
+// The active scroll's period. Set at toggle-on; the wheel callback returns it so
+// one value covers base/fast/alt without separate callbacks per speed.
+static uint16_t scroll_interval    = 300;
 
 static uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
     bool is_up = (bool)cb_arg;
@@ -459,7 +470,7 @@ static uint32_t wh_callback(uint32_t trigger_time, void* cb_arg) {
     } else {
         tap_code(KC_MS_WH_DOWN);
     }
-    return REP_DELAY;
+    return scroll_interval;
 };
 
 static uint32_t wh_callback_fast(uint32_t trigger_time, void* cb_arg) {
@@ -469,8 +480,21 @@ static uint32_t wh_callback_fast(uint32_t trigger_time, void* cb_arg) {
     } else {
         tap_code(KC_MS_WH_DOWN);
     }
-    return REP_DELAY_FAST;
+    return scroll_interval;
 };
+
+// Thumb sends real Left Alt (for the AHK alt-layer on non-scroll keys). When a
+// scroll key is pressed with Alt held, consume Alt as a speed selector only:
+// clear it from the keyboard report first, else the host sees Alt+Wheel and does
+// not scroll. Returns true if Alt was held (=> use the alt speed).
+static bool scroll_take_alt(void) {
+    if (get_mods() & MOD_MASK_ALT) {
+        del_mods(MOD_MASK_ALT);
+        send_keyboard_report();   // flush the Alt-release before the wheel taps
+        return true;
+    }
+    return false;
+}
 
 // --- Tartarus status LEDs (example consumer of the tartarus_rgb driver) -----
 // Idle -> static light blue. Dictating -> static red. Continuous scroll active
@@ -723,7 +747,7 @@ static void macro_seed_defaults(void) {
 // save apart from a zeroed block, so compiled defaults survive a fresh
 // EEPROM. Writes go through the wear-leveling backing store, which parks
 // core 1 across the flash op (see matrix.c).
-#define TRGB_CFG_VERSION 2
+#define TRGB_CFG_VERSION 3
 
 typedef struct PACKED {
     uint8_t version;   // TRGB_CFG_VERSION; anything else => treat as absent
@@ -947,10 +971,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     token      = INVALID_DEFERRED_TOKEN;
                     scroll_led = 0xFF;
                 } else {
+                    bool alt        = scroll_take_alt();
+                    scroll_interval = alt ? REP_DELAY_ALT : REP_DELAY;
                     tap_code(KC_MS_WH_UP);
-                    token       = defer_exec(REP_DELAY, wh_callback, (void*)true);
+                    token       = defer_exec(scroll_interval, wh_callback, (void*)true);
                     scroll_led  = led_from_key(record->event.key);
-                    scroll_half = REP_DELAY;      // slow scroll -> slow pulse
+                    scroll_half = scroll_interval;
                 }
             }
             return false;
@@ -962,10 +988,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     token      = INVALID_DEFERRED_TOKEN;
                     scroll_led = 0xFF;
                 } else {
+                    bool alt        = scroll_take_alt();
+                    scroll_interval = alt ? REP_DELAY_ALT : REP_DELAY;
                     tap_code(KC_MS_WH_DOWN);
-                    token       = defer_exec(REP_DELAY, wh_callback, (void*)false);
+                    token       = defer_exec(scroll_interval, wh_callback, (void*)false);
                     scroll_led  = led_from_key(record->event.key);
-                    scroll_half = REP_DELAY;      // slow scroll -> slow pulse
+                    scroll_half = scroll_interval;
                 }
             }
             return false;
@@ -977,10 +1005,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     token      = INVALID_DEFERRED_TOKEN;
                     scroll_led = 0xFF;
                 } else {
+                    bool alt        = scroll_take_alt();
+                    scroll_interval = alt ? REP_DELAY_ALT_FAST : REP_DELAY_FAST;
                     tap_code(KC_MS_WH_UP);
-                    token       = defer_exec(REP_DELAY_FAST, wh_callback_fast, (void*)true);
+                    token       = defer_exec(scroll_interval, wh_callback_fast, (void*)true);
                     scroll_led  = led_from_key(record->event.key);
-                    scroll_half = REP_DELAY_FAST; // fast scroll -> fast pulse
+                    scroll_half = scroll_interval;
                 }
             }
             return false;
@@ -992,10 +1022,76 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     token      = INVALID_DEFERRED_TOKEN;
                     scroll_led = 0xFF;
                 } else {
+                    bool alt        = scroll_take_alt();
+                    scroll_interval = alt ? REP_DELAY_ALT_FAST : REP_DELAY_FAST;
                     tap_code(KC_MS_WH_DOWN);
-                    token       = defer_exec(REP_DELAY_FAST, wh_callback_fast, (void*)false);
+                    token       = defer_exec(scroll_interval, wh_callback_fast, (void*)false);
                     scroll_led  = led_from_key(record->event.key);
-                    scroll_half = REP_DELAY_FAST; // fast scroll -> fast pulse
+                    scroll_half = scroll_interval;
+                }
+            }
+            return false;
+
+        case ASCROLLUP:
+            if (record->event.pressed) {
+                if (token) {
+                    cancel_deferred_exec(token);
+                    token      = INVALID_DEFERRED_TOKEN;
+                    scroll_led = 0xFF;
+                } else {
+                    scroll_interval = REP_DELAY_ALT;
+                    tap_code(KC_MS_WH_UP);
+                    token       = defer_exec(scroll_interval, wh_callback, (void*)true);
+                    scroll_led  = led_from_key(record->event.key);
+                    scroll_half = scroll_interval;
+                }
+            }
+            return false;
+
+        case ASCROLLDOWN:
+            if (record->event.pressed) {
+                if (token) {
+                    cancel_deferred_exec(token);
+                    token      = INVALID_DEFERRED_TOKEN;
+                    scroll_led = 0xFF;
+                } else {
+                    scroll_interval = REP_DELAY_ALT;
+                    tap_code(KC_MS_WH_DOWN);
+                    token       = defer_exec(scroll_interval, wh_callback, (void*)false);
+                    scroll_led  = led_from_key(record->event.key);
+                    scroll_half = scroll_interval;
+                }
+            }
+            return false;
+
+        case AFAST_UP:
+            if (record->event.pressed) {
+                if (token) {
+                    cancel_deferred_exec(token);
+                    token      = INVALID_DEFERRED_TOKEN;
+                    scroll_led = 0xFF;
+                } else {
+                    scroll_interval = REP_DELAY_ALT_FAST;
+                    tap_code(KC_MS_WH_UP);
+                    token       = defer_exec(scroll_interval, wh_callback, (void*)true);
+                    scroll_led  = led_from_key(record->event.key);
+                    scroll_half = scroll_interval;
+                }
+            }
+            return false;
+
+        case AFAST_DOWN:
+            if (record->event.pressed) {
+                if (token) {
+                    cancel_deferred_exec(token);
+                    token      = INVALID_DEFERRED_TOKEN;
+                    scroll_led = 0xFF;
+                } else {
+                    scroll_interval = REP_DELAY_ALT_FAST;
+                    tap_code(KC_MS_WH_DOWN);
+                    token       = defer_exec(scroll_interval, wh_callback, (void*)false);
+                    scroll_led  = led_from_key(record->event.key);
+                    scroll_half = scroll_interval;
                 }
             }
             return false;
