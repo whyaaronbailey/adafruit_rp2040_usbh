@@ -1123,6 +1123,14 @@ enum pm_cfg_cmd {
     PM_CFG_SET_BRIGHT = 0x06,  // [6, value]                  -> [6, ok]
     PM_CFG_SAVE       = 0x07,  // [7]                         -> [7, ok]
     PM_CFG_RESET_KEYS = 0x08,  // [8]                         -> [8, ok]
+    PM_CFG_DICT_SYNC  = 0x09,  // [9, on] -> [9, ok]  force dictate LED state
+    // PowerScribe never signals record state to the PowerMic over HID (the
+    // real handset infers it from its own mic stream being opened - see the
+    // full_powermic capture: zero host->HID traffic, only SET_INTERFACE on
+    // the audio interface). Our converter has no mic, so a host-side poller
+    // (AHK + hidapitester, watching Windows' mic-in-use state for the
+    // PowerScribe process) pushes the true state here. The DICTATE key still
+    // toggles locally for instant feedback; this command corrects any drift.
 };
 
 static uint8_t  pm_cfg_resp[64];
@@ -1147,6 +1155,10 @@ void powermic_config_set(const uint8_t *buf, uint8_t len) {
         }
         case PM_CFG_SET_KEY:
             dynamic_keymap_set_keycode(buf[1], buf[2], buf[3], ((uint16_t)buf[4] << 8) | buf[5]);
+            break;
+        case PM_CFG_DICT_SYNC:
+            dictating = (buf[1] != 0);
+            led_force_reapply();
             break;
         case PM_CFG_GET_COLOR: {
             HSV h = (buf[1] == 0) ? base_hsv : (buf[1] == 1) ? dict_hsv : scroll_hsv;
