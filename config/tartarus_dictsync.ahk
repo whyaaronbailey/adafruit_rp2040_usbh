@@ -18,7 +18,7 @@
 ;   key still toggles the colour locally for instant feedback; this corrects
 ;   any drift within one poll period (300 ms).
 ;
-; Diagnostics: set DictSync_Debug := true and watch %A_Temp%\tartarus_dictsync.log
+; Diagnostics: set DictSync_Debug := true and watch %USERPROFILE%\tartarus_dictsync.log
 
 #Requires AutoHotkey v2.0
 
@@ -132,5 +132,5 @@ DictSync_Log(msg) {
     global DictSync_Debug
     if !DictSync_Debug
         return
-    try FileAppend(FormatTime(, "HH:mm:ss") . " " . msg . "`n", A_Temp . "\tartarus_dictsync.log")
+    try FileAppend(FormatTime(, "HH:mm:ss") . " " . msg . "`n", EnvGet("USERPROFILE") . "\tartarus_dictsync.log")
 }

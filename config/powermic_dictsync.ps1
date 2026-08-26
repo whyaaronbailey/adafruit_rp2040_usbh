@@ -18,7 +18,7 @@
 # Diagnostics:
 #   powershell -File powermic_dictsync.ps1 -Verbose      (prints every session each poll)
 #   powershell -File powermic_dictsync.ps1 -Test         (forces on, then off, and exits)
-# Log: %TEMP%\powermic_dictsync.log
+# Log: %USERPROFILE%\powermic_dictsync.log
 
 [CmdletBinding()]
 param(
