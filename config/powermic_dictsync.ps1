@@ -29,7 +29,7 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
-$log = Join-Path $env:TEMP 'powermic_dictsync.log'
+$log = Join-Path $env:USERPROFILE 'powermic_dictsync.log'
 function Log([string]$m) { ("{0:HH:mm:ss.fff} {1}" -f (Get-Date), $m) | Add-Content -Path $log }
 
 # $PSScriptRoot is not populated for param defaults in Windows PowerShell 5.1.
