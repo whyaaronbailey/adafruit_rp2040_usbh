@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIA.app — PowerMic Converter</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --line:#252c34; --ink:#e7edf3; --dim:#8b97a5;
+    --accent:#3aa0ff; --dictate:#ff4b4b; --ok:#38d39f; --warn:#ffb020;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  header{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid var(--line)}
+  header .dot{width:11px;height:11px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+  header .dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+  header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
+  header .id{font:12px/1 var(--mono);color:var(--dim);margin-left:auto}
+  main{max-width:960px;margin:0 auto;padding:24px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:9px 15px;font:inherit;cursor:pointer;transition:.12s}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#05233f;font-weight:650}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:20px;margin-top:20px}
+  section h2{margin:0 0 14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .key{background:#12161c;border:1px solid var(--line);border-radius:9px;padding:8px 6px;
+    text-align:center;cursor:pointer;min-height:56px;display:flex;flex-direction:column;
+    justify-content:center;gap:2px;transition:.1s}
+  .key:hover{border-color:var(--accent)}
+  .key .pos{font:10px/1 var(--mono);color:var(--dim)}
+  .key .kc{font:12px/1.2 var(--mono);word-break:break-all}
+  .key.dictate{border-color:var(--dictate)}
+  .key.sel{outline:2px solid var(--accent);outline-offset:1px}
+  .swatch{display:flex;align-items:center;gap:12px;margin:8px 0}
+  .swatch label{width:120px;color:var(--dim);font-size:13px}
+  .swatch input[type=range]{flex:1}
+  .chip{width:34px;height:22px;border-radius:6px;border:1px solid var(--line)}
+  .note{color:var(--dim);font-size:13px;margin-top:10px}
+  #log{font:12px/1.5 var(--mono);color:var(--dim);white-space:pre-wrap;
+    max-height:150px;overflow:auto;margin-top:8px}
+  .pill{font:11px/1 var(--mono);padding:3px 7px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+  dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:420px}
+  dialog input{width:100%;background:#12161c;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:9px;font:inherit;margin-top:8px}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="dot"></span>
+  <h1>VIA.app</h1>
+  <span class="id" id="devid">not connected</span>
+</header>
+
+<main>
+  <div class="row">
+    <button class="primary" id="connect">Connect device</button>
+    <button id="reload" disabled>Reload from device</button>
+    <button id="save" disabled>Save to device</button>
+    <button id="reset" disabled>Reset keys to firmware default</button>
+    <span class="pill" id="proto"></span>
+  </div>
+
+  <section id="keysCard" hidden>
+    <h2>Keys &nbsp;<span class="note" style="text-transform:none">— click a key, then press any key / pick a PowerMic action</span></h2>
+    <div class="row" style="margin-bottom:12px">
+      <label class="note">Layer</label>
+      <select id="layer"></select>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="colorCard" hidden>
+    <h2>Colors</h2>
+    <div class="swatch"><label>Idle (base)</label><span class="chip" id="c0"></span>
+      <input type="range" min="0" max="255" id="h0"><span class="note" id="h0v"></span></div>
+    <div class="swatch"><label>Dictating</label><span class="chip" id="c1"></span>
+      <input type="range" min="0" max="255" id="h1"><span class="note" id="h1v"></span></div>
+    <div class="swatch"><label>Pressed / scroll</label><span class="chip" id="c2"></span>
+      <input type="range" min="0" max="255" id="h2"><span class="note" id="h2v"></span></div>
+    <div class="swatch"><label>Brightness</label><span class="chip" id="cb" style="background:#fff"></span>
+      <input type="range" min="0" max="255" id="br"><span class="note" id="brv"></span></div>
+    <div class="note">Colors and keys persist to the device on <b>Save</b>. They survive reboots and reflashes.</div>
+  </section>
+
+  <section>
+    <h2>Log</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<dialog id="kcDialog">
+  <div style="font-weight:650;margin-bottom:4px">Assign to <span id="kcPos"></span></div>
+  <div class="note">Press a keyboard key to capture it, or pick a PowerMic action below.</div>
+  <input id="kcCapture" placeholder="click here, then press a key…" readonly>
+  <div class="row" style="margin-top:12px">
+    <button data-kc="DICTATE">Dictate</button>
+    <button data-kc="TABFWD">Next field</button>
+    <button data-kc="TABBACK">Prev field</button>
+    <button data-kc="TRANSCRIBE">Transcribe</button>
+    <button data-kc="SCROLLUP">Scroll up</button>
+    <button data-kc="SCROLLDOWN">Scroll down</button>
+    <button data-kc="FAST_UP">Fast up</button>
+    <button data-kc="FAST_DOWN">Fast down</button>
+    <button data-kc="LED_RESYNC">Resync colour</button>
+  </div>
+  <div class="row" style="margin-top:14px;justify-content:flex-end">
+    <button id="kcCancel">Cancel</button>
+    <button class="primary" id="kcApply">Apply</button>
+  </div>
+</dialog>
+
+<script>
+// ---- Feature-report protocol (must match keymap.c powermic_config_set) -------
+const CMD = {PROTO:1, GETKEY:2, SETKEY:3, GETCOL:4, SETCOL:5, BRIGHT:6, SAVE:7, RESET:8};
+const REPORT_LEN = 39;               // PowerMic vendor Feature report data length
+const FILTER = [{vendorId:0x0554, productId:0x1001}];
+
+// A tiny keycode table (extend freely). Custom PowerMic keycodes are QK_KB_n.
+const QK_KB_0 = 0x7E00;
+// Offsets for the tartarus2_sk enum (verified against the built firmware).
+// A different build's enum will differ - check keymap.c before reusing.
+const CUSTOM = {DICTATE:QK_KB_0+0, SCROLLUP:QK_KB_0+1, SCROLLDOWN:QK_KB_0+2,
+  FAST_UP:QK_KB_0+3, FAST_DOWN:QK_KB_0+4, FX_NEXT:QK_KB_0+5, FX_PREV:QK_KB_0+6,
+  TRANSCRIBE:QK_KB_0+31, TABBACK:QK_KB_0+32, TABFWD:QK_KB_0+33,
+  REWIND:QK_KB_0+34, FFWD:QK_KB_0+35, STOPPLAY:QK_KB_0+36,
+  CUSTOML:QK_KB_0+37, ENTERSEL:QK_KB_0+38, CUSTOMR:QK_KB_0+39,
+  LED_RESYNC:QK_KB_0+44};
+const BASIC = { // usb HID keyboard usage -> QMK keycode (F13..F24 + common)
+  F13:0x68,F14:0x69,F15:0x6A,F16:0x6B,F17:0x6C,F18:0x6D,F19:0x6E,F20:0x6F,
+  F21:0x70,F22:0x71,F23:0x72,F24:0x73,A:0x04,B:0x05,ENTER:0x28,ESC:0x29,NO:0x00
+};
+function kcName(kc){
+  for(const[k,v]of Object.entries(CUSTOM))if(v===kc)return k;
+  for(const[k,v]of Object.entries(BASIC))if(v===kc)return k;
+  if(kc===0)return "—";
+  // modifier-wrapped (e.g. Ctrl/Shift + Fxx) -> show hex
+  return "0x"+kc.toString(16).toUpperCase().padStart(4,"0");
+}
+
+let dev=null, proto=null, curLayer=0, keymap=[], selCell=null, capturedKc=null;
+const $=s=>document.querySelector(s), log=m=>{$("#log").textContent=(new Date().toLocaleTimeString()+"  "+m+"\n")+$("#log").textContent;};
+
+async function feature(cmd,args=[]){
+  const out=new Uint8Array(REPORT_LEN); out[0]=cmd; args.forEach((v,i)=>out[i+1]=v);
+  await dev.sendFeatureReport(0,out);
+  const dv=await dev.receiveFeatureReport(0);
+  return new Uint8Array(dv.buffer,dv.byteOffset,dv.byteLength);
+}
+// device response layout: receiveFeatureReport returns data WITHOUT the report-id byte
+function rsp(a){return a;} // a[0]=cmd, a[1]=ok, a[2..]=data
+
+async function connect(){
+  const list=await navigator.hid.requestDevice({filters:FILTER});
+  dev=list.find(d=>d.collections.some(c=>c.usagePage===1&&c.usage===0))||list[0];
+  if(!dev){log("no matching device");return;}
+  await dev.open();
+  $("#dot").classList.add("on");
+  $("#devid").textContent=dev.productName+"  "+dev.vendorId.toString(16).padStart(4,"0")+":"+dev.productId.toString(16).padStart(4,"0");
+  ["reload","save","reset"].forEach(i=>$("#"+i).disabled=false);
+  await loadAll();
+}
+
+async function loadAll(){
+  const p=rsp(await feature(CMD.PROTO));
+  proto={layers:p[2],rows:p[3],cols:p[4]};
+  $("#proto").textContent=`proto v${p[1]} · ${proto.layers} layers · ${proto.rows}×${proto.cols}`;
+  const sel=$("#layer"); sel.innerHTML="";
+  for(let l=0;l<proto.layers;l++){const o=document.createElement("option");o.value=l;o.textContent="Layer "+l;sel.appendChild(o);}
+  $("#keysCard").hidden=$("#colorCard").hidden=false;
+  await readColors(); await readLayer(0);
+}
+
+// Physical key positions of interest (from info.json LAYOUT_tartarus2)
+const POSITIONS=[
+  ["01",3,6],["02",3,7],["03",4,0],["04",4,1],["05",4,2],
+  ["06",5,3],["07",2,4],["08",3,2],["09",1,0],["10",2,5],
+  ["11",7,1],["12",0,4],["13",2,6],["14",0,7],["15",1,1],
+  ["16",28,1],["17",3,5],["18",3,3],["19",0,6],["20",13,1],  // note: key20 handled below
+  ["KEY20",5,4],["THUMB-L",10,0],["THUMB-R",9,7]
+];
+
+async function readLayer(l){
+  curLayer=l; const g=$("#grid"); g.innerHTML="";
+  for(const[label,r,c]of POSITIONS){
+    const a=rsp(await feature(CMD.GETKEY,[l,r,c]));
+    const kc=(a[2]<<8)|a[3];
+    const cell=document.createElement("div");
+    cell.className="key"+(kc===CUSTOM.DICTATE?" dictate":"");
+    cell.innerHTML=`<span class="pos">${label}</span><span class="kc">${kcName(kc)}</span>`;
+    cell.onclick=()=>openAssign(cell,label,r,c);
+    g.appendChild(cell);
+  }
+}
+
+function openAssign(cell,label,r,c){
+  selCell={cell,r,c}; capturedKc=null;
+  $("#kcPos").textContent=label;
+  $("#kcCapture").value=""; $("#kcDialog").showModal();
+}
+$("#kcCapture").addEventListener("keydown",e=>{
+  e.preventDefault();
+  const name=e.key.length===1?e.key.toUpperCase():e.key.replace("Arrow","").toUpperCase();
+  if(BASIC[name]!==undefined){capturedKc=BASIC[name];$("#kcCapture").value=name;}
+  else if(/^F1[3-9]$|^F2[0-4]$/.test(e.key.toUpperCase())){capturedKc=BASIC[e.key.toUpperCase()];$("#kcCapture").value=e.key.toUpperCase();}
+  else $("#kcCapture").value="unsupported: "+e.key;
+});
+$("#kcCapture").addEventListener("focus",()=>$("#kcCapture").value="press a key…");
+document.querySelectorAll("#kcDialog [data-kc]").forEach(b=>b.onclick=()=>{
+  capturedKc=CUSTOM[b.dataset.kc];$("#kcCapture").value=b.dataset.kc;});
+$("#kcCancel").onclick=()=>$("#kcDialog").close();
+$("#kcApply").onclick=async()=>{
+  if(capturedKc==null){$("#kcDialog").close();return;}
+  const{cell,r,c}=selCell;
+  await feature(CMD.SETKEY,[curLayer,r,c,capturedKc>>8,capturedKc&0xFF]);
+  cell.querySelector(".kc").textContent=kcName(capturedKc);
+  cell.classList.toggle("dictate",capturedKc===CUSTOM.DICTATE);
+  log(`set [${r},${c}] = ${kcName(capturedKc)} (unsaved)`);
+  $("#kcDialog").close();
+};
+
+const hsvToRgb=(h,s,v)=>{h/=255;s/=255;v/=255;const i=Math.floor(h*6),f=h*6-i,
+  p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);const[r,g,b]=[[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i%6];
+  return`rgb(${r*255|0},${g*255|0},${b*255|0})`;};
+
+async function readColors(){
+  for(let i=0;i<3;i++){
+    const a=rsp(await feature(CMD.GETCOL,[i]));
+    const h=a[2],s=a[3],bright=a[4];
+    $("#h"+i).value=h; $("#h"+i+"v").textContent="hue "+h;
+    $("#c"+i).style.background=hsvToRgb(h,s,255);
+    if(i===0){$("#br").value=bright;$("#brv").textContent="brightness "+bright;}
+  }
+}
+[0,1,2].forEach(i=>$("#h"+i).addEventListener("input",async e=>{
+  const h=+e.target.value; $("#h"+i+"v").textContent="hue "+h;
+  $("#c"+i).style.background=hsvToRgb(h,255,255);
+  await feature(CMD.SETCOL,[i,h,255]);
+}));
+$("#br").addEventListener("input",async e=>{
+  const b=+e.target.value;$("#brv").textContent="brightness "+b;
+  await feature(CMD.BRIGHT,[b]);
+});
+
+$("#connect").onclick=connect;
+$("#reload").onclick=loadAll;
+$("#layer").onchange=e=>readLayer(+e.target.value);
+$("#save").onclick=async()=>{await feature(CMD.SAVE);log("saved to device ✔");};
+$("#reset").onclick=async()=>{await feature(CMD.RESET);log("keys reset to firmware default");await readLayer(curLayer);};
+
+if(!("hid"in navigator))log("This browser has no WebHID. Use Chrome or Edge.");
+</script>
+</body>
+</html>
