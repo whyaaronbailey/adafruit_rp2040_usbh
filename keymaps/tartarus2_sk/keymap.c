@@ -749,7 +749,11 @@ static void macro_seed_defaults(void) {
 // save apart from a zeroed block, so compiled defaults survive a fresh
 // EEPROM. Writes go through the wear-leveling backing store, which parks
 // core 1 across the flash op (see matrix.c).
-#define TRGB_CFG_VERSION 3
+// Distinct from tartarus2_unified's version series ON PURPOSE. The version byte
+// is what tells the firmware "the stored keymap belongs to this build"; sharing
+// a number with a different build means flashing one over the other keeps the
+// OLD keys silently. SK owns 10+, unified owns 1..9.
+#define TRGB_CFG_VERSION 10
 
 typedef struct PACKED {
     uint8_t version;   // TRGB_CFG_VERSION; anything else => treat as absent
