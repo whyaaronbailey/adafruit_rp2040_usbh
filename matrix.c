@@ -32,7 +32,10 @@ static uint8_t          kbd_instance;
 static int32_t          led_count = -1;
 static uint8_t          hid_report_buffer[64];
 static volatile uint8_t hid_report_size;
-static uint8_t          hid_instance;
+// NOT static: a keymap-level mouse_report_hook() needs to know WHICH attached
+// device a report came from, to apply per-device pointer policy.
+// Encoding is (dev_addr * 16) + instance.
+uint8_t                 hid_instance;
 static bool             hid_disconnect_flag;
 static uint8_t          pre_keyreport[8];
 #define LED_BLINK_TIME_MS 50

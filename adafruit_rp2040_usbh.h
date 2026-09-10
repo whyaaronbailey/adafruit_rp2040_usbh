@@ -59,6 +59,11 @@ extern volatile uint8_t  razer_inst_proto[8];
 // Input-path diagnostics (matrix.c): total HID reports received from the
 // attached device, reports from the keyboard interface, and the first bytes
 // of the most recent keyboard report.
+// Source of the HID report currently being parsed, as (dev_addr * 16) + instance.
+// Lets a keymap-level mouse_report_hook() tell attached devices apart and apply
+// per-device policy (e.g. one trackball scrolls, another moves the cursor).
+extern uint8_t hid_instance;
+
 extern volatile uint16_t diag_rx_all;
 extern volatile uint16_t diag_rx_kbd;
 extern volatile uint8_t  diag_last_kbd[4];
