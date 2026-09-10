@@ -316,6 +316,9 @@ void                 tuh_hid_set_protocol_complete_cb(uint8_t dev_addr, uint8_t 
 }
 
 void tuh_mount_cb(uint8_t dev_addr) {
+    host_mount_devs++;
+    host_last_addr = dev_addr;
+    tuh_vid_pid_get(dev_addr, (uint16_t *)&host_last_vid, (uint16_t *)&host_last_pid);
     dprintf("USB device is mounted:%d\n", dev_addr);
 
     if (led_count < 0) {
@@ -336,6 +339,7 @@ void tuh_mount_cb(uint8_t dev_addr) {
 }
 
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
+    host_mount_hids++;
     dprintf("HID is mounted:%d:%d\n", dev_addr, instance);
     parse_report_descriptor((dev_addr * 16) + instance, desc_report, desc_len);
 
@@ -367,6 +371,16 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
 // Input-path diagnostics: how many HID reports the host stack has received
 // in total, how many came from the keyboard interface specifically, and the
 // first bytes of the most recent keyboard report. Read via RAW HID 0xD4.
+// Enumeration diagnostics: separate "device never mounted" from "mounted but
+// silent". Without these a stationary mouse looks identical to a dongle that
+// failed to enumerate - the single most important distinction when bringing
+// up a new device on the PIO-USB host port.
+volatile uint8_t  host_mount_devs = 0;  // tuh_mount_cb calls
+volatile uint8_t  host_mount_hids = 0;  // tuh_hid_mount_cb calls (per interface)
+volatile uint16_t host_last_vid   = 0;
+volatile uint16_t host_last_pid   = 0;
+volatile uint8_t  host_last_addr  = 0;
+
 volatile uint16_t diag_rx_all = 0;
 volatile uint16_t diag_rx_kbd = 0;
 volatile uint8_t  diag_last_kbd[4] = {0};

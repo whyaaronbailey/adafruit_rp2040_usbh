@@ -64,6 +64,14 @@ extern volatile uint8_t  razer_inst_proto[8];
 // per-device policy (e.g. one trackball scrolls, another moves the cursor).
 extern uint8_t hid_instance;
 
+// Enumeration diagnostics - tells a device that never mounted apart from one
+// that mounted but has sent nothing yet.
+extern volatile uint8_t  host_mount_devs;
+extern volatile uint8_t  host_mount_hids;
+extern volatile uint16_t host_last_vid;
+extern volatile uint16_t host_last_pid;
+extern volatile uint8_t  host_last_addr;
+
 extern volatile uint16_t diag_rx_all;
 extern volatile uint16_t diag_rx_kbd;
 extern volatile uint8_t  diag_last_kbd[4];
