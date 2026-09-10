@@ -72,6 +72,11 @@ extern volatile uint16_t host_last_vid;
 extern volatile uint16_t host_last_pid;
 extern volatile uint8_t  host_last_addr;
 
+extern volatile uint8_t  diag_last_raw[8];
+extern volatile uint8_t  diag_last_raw_len;
+extern volatile uint8_t  diag_last_raw_inst;
+extern volatile uint16_t diag_rx_by_inst[4];
+
 extern volatile uint16_t diag_rx_all;
 extern volatile uint16_t diag_rx_kbd;
 extern volatile uint8_t  diag_last_kbd[4];

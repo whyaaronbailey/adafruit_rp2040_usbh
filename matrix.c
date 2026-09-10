@@ -357,6 +357,28 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
         razer_led_instance = instance;
     }
 
+#ifdef HOST_FORCE_REPORT_PROTOCOL
+    // TinyUSB defaults boot-subclass interfaces to BOOT protocol
+    // (_hidh_default_protocol = HID_PROTOCOL_BOOT in hid_host.c). A boot mouse
+    // sends a fixed 3-byte report [buttons][X][Y] with NO report ID and 8-bit
+    // axes - but this converter's parser is built from the device's REPORT
+    // descriptor, which may declare report IDs and wider fields.
+    //
+    // When they disagree, parse_report() reads report[0] - the buttons byte -
+    // as a report ID. Observed on a Kensington Orbit (047D:80A6), whose
+    // descriptor puts the wheel on report ID 1 and X/Y on report ID 2 as
+    // 12-bit fields:
+    //   buttons=0 (rolling)      -> no collection id 0 -> motion silently dropped
+    //   buttons=1 (left click)   -> matches id 1 -> parsed as wheel data
+    //   buttons=2 (right click)  -> matches id 2 -> parsed as 12-bit X/Y garbage
+    // which looks exactly like "the ball does nothing but right-click scrolls".
+    //
+    // Forcing REPORT protocol makes the device send what its descriptor
+    // actually describes. Opt-in per keymap: changing protocol on a device
+    // whose parser was working fine in boot mode could regress it.
+    tuh_hid_set_protocol(dev_addr, instance, HID_PROTOCOL_REPORT);
+#endif
+
     tuh_hid_receive_report(dev_addr, instance);
 }
 
@@ -381,6 +403,15 @@ volatile uint16_t host_last_vid   = 0;
 volatile uint16_t host_last_pid   = 0;
 volatile uint8_t  host_last_addr  = 0;
 
+// Raw capture of the last HID report from ANY interface, so we can see what a
+// device is actually sending rather than inferring it from parsed results.
+// Report IDs matter here: a device can multiplex several report layouts on one
+// interface, and only some of them may be reaching the parser.
+volatile uint8_t  diag_last_raw[8] = {0};
+volatile uint8_t  diag_last_raw_len = 0;
+volatile uint8_t  diag_last_raw_inst = 0;
+volatile uint16_t diag_rx_by_inst[4] = {0};
+
 volatile uint16_t diag_rx_all = 0;
 volatile uint16_t diag_rx_kbd = 0;
 volatile uint8_t  diag_last_kbd[4] = {0};
@@ -397,6 +428,11 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
     if (led_count < 0) {
         led_count = timer_read();
     }
+
+    if (instance < 4) diag_rx_by_inst[instance]++;
+    diag_last_raw_len  = (len > 8) ? 8 : (uint8_t)len;
+    diag_last_raw_inst = instance;
+    for (uint8_t i = 0; i < diag_last_raw_len; i++) diag_last_raw[i] = report[i];
 
     if (len > 0) {
         int cnt = 0;

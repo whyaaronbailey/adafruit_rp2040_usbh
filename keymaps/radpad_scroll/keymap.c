@@ -59,6 +59,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 extern volatile uint16_t radpad_vid, radpad_pid, radpad_reports;
 extern volatile int16_t  radpad_last_x, radpad_last_y, radpad_last_v, radpad_last_clicks;
 extern volatile uint8_t  radpad_last_mode;
+extern volatile uint16_t radpad_tune_divisor, radpad_tune_accel, radpad_tune_maxgain;
+extern volatile uint8_t  radpad_tune_active;
+extern volatile uint32_t radpad_total_clicks;
+extern volatile int16_t  radpad_max_y;
 
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t resp[32] = {0};
@@ -94,6 +98,47 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             resp[23] = (uint8_t)(host_last_pid & 0xFF);
             resp[24] = (uint8_t)(host_last_pid >> 8);
             resp[25] = host_last_addr;
+            // cumulative, so a burst that ended in an idle report is still visible
+            resp[26] = (uint8_t)(radpad_total_clicks & 0xFF);
+            resp[27] = (uint8_t)(radpad_total_clicks >> 8);
+            resp[28] = (uint8_t)(radpad_max_y & 0xFF);
+            resp[29] = (uint8_t)(radpad_max_y >> 8);
+            resp[30] = (uint8_t)(radpad_tune_divisor & 0xFF);
+            resp[31] = radpad_tune_active;
+            raw_hid_send(resp, sizeof(resp));
+            break;
+
+        // 0xD3 -> raw bytes of the last HID report + per-interface counts.
+        // Shows the actual report ID and payload, which is the only way to tell
+        // "the device never sent it" from "we received it but routed it wrong".
+        case 0xD3: {
+            resp[0] = 0xD3;
+            resp[1] = diag_last_raw_len;
+            resp[2] = diag_last_raw_inst;
+            for (uint8_t i = 0; i < 8; i++) resp[3 + i] = diag_last_raw[i];
+            for (uint8_t i = 0; i < 4; i++) {
+                resp[11 + i * 2] = (uint8_t)(diag_rx_by_inst[i] & 0xFF);
+                resp[12 + i * 2] = (uint8_t)(diag_rx_by_inst[i] >> 8);
+            }
+            raw_hid_send(resp, sizeof(resp));
+            break;
+        }
+
+        // 0xD1 divLo divHi accel maxLo maxHi -> live scroll tuning
+        case 0xD1:
+            radpad_tune_divisor = (uint16_t)data[1] | ((uint16_t)data[2] << 8);
+            radpad_tune_accel   = data[3];
+            radpad_tune_maxgain = (uint16_t)data[4] | ((uint16_t)data[5] << 8);
+            radpad_tune_active  = 1;
+            resp[0] = 0xD1; resp[1] = 1;
+            raw_hid_send(resp, sizeof(resp));
+            break;
+
+        // 0xD2 -> reset cumulative counters, so each test is a clean window
+        case 0xD2:
+            radpad_total_clicks = 0;
+            radpad_max_y        = 0;
+            resp[0] = 0xD2; resp[1] = 1;
             raw_hid_send(resp, sizeof(resp));
             break;
     }
